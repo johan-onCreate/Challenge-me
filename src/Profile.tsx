@@ -1,5 +1,6 @@
 import { useState, FormEvent, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
+import { calculateProgressPercent, canChangeTier } from "./profileUtils";
 
 interface Challenge {
   id: number;
@@ -134,14 +135,12 @@ function Profile() {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) return;
-    await supabase
-      .from("profiles")
-      .upsert({
-        id: user.id,
-        full_name: fullName,
-        alias: alias,
-        updated_at: new Date().toISOString(),
-      });
+    await supabase.from("profiles").upsert({
+      id: user.id,
+      full_name: fullName,
+      alias: alias,
+      updated_at: new Date().toISOString(),
+    });
     setProfileMessage("✨ Profilen har sparats!");
     setProfileLoading(false);
   };
@@ -161,15 +160,13 @@ function Profile() {
     } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { error } = await supabase
-      .from("user_challenges")
-      .insert([
-        {
-          user_id: user.id,
-          challenge_id: currentChallenge.id,
-          chosen_tier: chosenTier,
-        },
-      ]);
+    const { error } = await supabase.from("user_challenges").insert([
+      {
+        user_id: user.id,
+        challenge_id: currentChallenge.id,
+        chosen_tier: chosenTier,
+      },
+    ]);
 
     if (!error) {
       setIsCurrentCompleted(true);
@@ -178,7 +175,12 @@ function Profile() {
   };
 
   const handleChangeTier = async () => {
-    if (!currentChallenge || !chosenTier || chosenTier === savedTier) return;
+    if (
+      !currentChallenge ||
+      !canChangeTier(chosenTier, savedTier, currentChallenge.tiers || [])
+    ) {
+      return;
+    }
 
     setTierLoading(true);
     setTierMessage("");
@@ -223,17 +225,15 @@ function Profile() {
 
     const newAmount = existingLog ? existingLog.amount + amountNum : amountNum;
 
-    const { error } = await supabase
-      .from("challenge_logs")
-      .upsert(
-        {
-          user_id: user.id,
-          challenge_id: currentChallenge.id,
-          amount: newAmount,
-          logged_at: logDate,
-        },
-        { onConflict: "user_id,challenge_id,logged_at" },
-      );
+    const { error } = await supabase.from("challenge_logs").upsert(
+      {
+        user_id: user.id,
+        challenge_id: currentChallenge.id,
+        amount: newAmount,
+        logged_at: logDate,
+      },
+      { onConflict: "user_id,challenge_id,logged_at" },
+    );
 
     if (!error) {
       setLogAmount("");
@@ -286,11 +286,10 @@ function Profile() {
       fetchChallengeLogs(user.id, currentChallenge.id);
     }
   };
-  const targetNumber = parseInt(savedTier) || 0;
-  const progressPercent =
-    targetNumber > 0
-      ? Math.min(Math.round((totalLoggedAmount / targetNumber) * 100), 100)
-      : 0;
+  const progressPercent = calculateProgressPercent(
+    totalLoggedAmount,
+    savedTier,
+  );
 
   const minDate = currentChallenge?.start_date
     ? currentChallenge.start_date.split("T")[0]
@@ -381,49 +380,50 @@ function Profile() {
             {/* PROGRESS MÄTARE & LOGGNING */}
             {isCurrentCompleted && (
               <div className="space-y-5 border-t border-slate-100 pt-4">
-                {currentChallenge.tiers && currentChallenge.tiers.length > 0 && (
-                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-3">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">
-                      Ändra nivå
-                    </label>
-                    <div className="flex flex-wrap gap-4">
-                      {currentChallenge.tiers.map((tier, index) => (
-                        <label
-                          key={index}
-                          className="flex items-center gap-1.5 text-sm font-medium text-slate-700 cursor-pointer"
-                        >
-                          <input
-                            type="radio"
-                            name="saved-tier"
-                            value={tier}
-                            checked={chosenTier === tier}
-                            onChange={(e) => {
-                              setChosenTier(e.target.value);
-                              setTierMessage("");
-                            }}
-                            className="text-blue-600"
-                          />
-                          {tier}
-                        </label>
-                      ))}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleChangeTier}
-                      disabled={tierLoading || chosenTier === savedTier}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-xl text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {tierLoading ? "Sparar..." : "Spara ny nivå"}
-                    </button>
-                    {tierMessage && (
-                      <p
-                        className={`text-xs font-medium ${tierMessage.startsWith("Fel") ? "text-rose-600" : "text-emerald-600"}`}
+                {currentChallenge.tiers &&
+                  currentChallenge.tiers.length > 0 && (
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-3">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">
+                        Ändra nivå
+                      </label>
+                      <div className="flex flex-wrap gap-4">
+                        {currentChallenge.tiers.map((tier, index) => (
+                          <label
+                            key={index}
+                            className="flex items-center gap-1.5 text-sm font-medium text-slate-700 cursor-pointer"
+                          >
+                            <input
+                              type="radio"
+                              name="saved-tier"
+                              value={tier}
+                              checked={chosenTier === tier}
+                              onChange={(e) => {
+                                setChosenTier(e.target.value);
+                                setTierMessage("");
+                              }}
+                              className="text-blue-600"
+                            />
+                            {tier}
+                          </label>
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleChangeTier}
+                        disabled={tierLoading || chosenTier === savedTier}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-xl text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {tierMessage}
-                      </p>
-                    )}
-                  </div>
-                )}
+                        {tierLoading ? "Sparar..." : "Spara ny nivå"}
+                      </button>
+                      {tierMessage && (
+                        <p
+                          className={`text-xs font-medium ${tierMessage.startsWith("Fel") ? "text-rose-600" : "text-emerald-600"}`}
+                        >
+                          {tierMessage}
+                        </p>
+                      )}
+                    </div>
+                  )}
 
                 {/* Progress Bar */}
                 <div className="space-y-1.5">
