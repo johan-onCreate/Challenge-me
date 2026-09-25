@@ -5,7 +5,7 @@ import {
   calculateProgressPercent,
   canChangeTier,
 } from "./profileUtils";
-import { getChallengeDates, getIsoWeekNumber } from "./calendarUtils";
+import { getChallengeDates } from "./calendarUtils";
 
 interface Challenge {
   id: number;
@@ -425,7 +425,7 @@ function Profile() {
   };
 
   // NYTT: Spara en ändrad historisk logg
-  const handleUpdateLog = async (logId: number, loggedAt: string) => {
+  const handleUpdateLog = async (logId: number) => {
     if (!isCurrentCompleted || !currentChallenge) return;
 
     const amountNum = parseInt(editingAmount);
@@ -541,23 +541,6 @@ function Profile() {
     ...Array.from({ length: calendarStartOffset }, () => null),
     ...challengeDates,
   ];
-  const calendarDisplayCells: Array<{
-    date: string | null;
-    weekNumber?: number;
-  }> = [];
-  for (let index = 0; index < calendarCells.length; index += 7) {
-    const weekDays = calendarCells.slice(index, index + 7);
-    const firstDate = weekDays.find((date): date is string => Boolean(date));
-    calendarDisplayCells.push({
-      date: null,
-      weekNumber: firstDate ? getIsoWeekNumber(firstDate) : undefined,
-    });
-    weekDays.forEach((date) => calendarDisplayCells.push({ date }));
-  }
-  const calendarMonthLabel =
-    minDate && maxDate
-      ? `${new Date(`${minDate}T00:00:00`).toLocaleDateString("sv-SE", { month: "long", year: "numeric" })} – ${new Date(`${maxDate}T00:00:00`).toLocaleDateString("sv-SE", { month: "long", year: "numeric" })}`
-      : "";
   const todayDate = toLocalDateKey(new Date());
 
   return (
@@ -903,9 +886,7 @@ function Profile() {
                                 className="w-20 px-2 py-1 border border-slate-300 rounded-md text-slate-900"
                               />
                               <button
-                                onClick={() =>
-                                  handleUpdateLog(log.id, log.logged_at)
-                                }
+                                onClick={() => handleUpdateLog(log.id)}
                                 className="bg-emerald-600 text-white px-2 py-1 rounded-md font-medium"
                               >
                                 Spara
@@ -1237,9 +1218,10 @@ function Profile() {
           </div>
           <button
             type="submit"
+            disabled={profileLoading}
             className="bg-slate-900 hover:bg-slate-800 text-white font-medium py-2 px-4 rounded-xl text-xs"
           >
-            Spara profil
+            {profileLoading ? "Sparar..." : "Spara profil"}
           </button>
         </form>
         {profileMessage && (

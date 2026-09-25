@@ -10,10 +10,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import {
-  calculateTargetAveragePerDay,
-  calculateTargetProgress,
-} from "./leaderboardUtils";
+import { calculateTargetProgress } from "./leaderboardUtils";
 
 interface LeaderboardUser {
   userId: string;
@@ -149,10 +146,6 @@ function Leaderboard() {
 
         Object.keys(groups).forEach((tier) => {
           const tierLeaders = groups[tier];
-          const targetAveragePerDay = calculateTargetAveragePerDay(
-            tier,
-            chartDates.length,
-          );
           const cumulativeTotals: { [userId: string]: number } = {};
 
           tierLeaders.forEach((leader) => {
