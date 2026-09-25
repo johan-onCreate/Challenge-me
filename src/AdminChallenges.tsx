@@ -100,8 +100,8 @@ function AdminChallenges() {
     setTitle(challenge.title);
     setDescription(challenge.description);
     setPoints(challenge.points);
-    setStartDate(challenge.start_date ? challenge.start_date.slice(0, 16) : "");
-    setEndDate(challenge.end_date ? challenge.end_date.slice(0, 16) : "");
+    setStartDate(challenge.start_date ? challenge.start_date.slice(0, 10) : "");
+    setEndDate(challenge.end_date ? challenge.end_date.slice(0, 10) : "");
     setTiers(challenge.tiers || []);
     setMessage("");
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -300,10 +300,10 @@ function AdminChallenges() {
           </div>
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">
-              Startdatum
+              Startdag
             </label>
             <input
-              type="datetime-local"
+              type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
               required
@@ -312,10 +312,10 @@ function AdminChallenges() {
           </div>
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">
-              Slutdatum
+              Slutdag
             </label>
             <input
-              type="datetime-local"
+              type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
               required
