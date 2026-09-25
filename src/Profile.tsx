@@ -565,7 +565,7 @@ function Profile() {
                   <div className="hidden space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <span className="text-xs font-bold uppercase tracking-wider text-slate-600">
-                        Challengekalender
+                        Kalender
                       </span>
                       <span className="text-[11px] text-slate-500">
                         Klicka på en dag för att logga aktivitet
@@ -873,7 +873,7 @@ function Profile() {
               <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="text-xs font-bold uppercase tracking-wider text-slate-600">
-                    Challengekalender
+                    Kalender
                   </span>
                   <span className="text-[11px] text-slate-500">
                     Klicka på en dag för att logga aktivitet

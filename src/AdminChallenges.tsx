@@ -145,12 +145,28 @@ function AdminChallenges() {
   };
 
   const handleSetActive = async (id: number) => {
-    await supabase.from("challenges").update({ is_active: false }).neq("id", 0);
-    const { error } = await supabase
+    setMessage("");
+    const { error: deactivateError } = await supabase
+      .from("challenges")
+      .update({ is_active: false })
+      .neq("id", id);
+
+    if (deactivateError) {
+      setMessage(`Fel: ${deactivateError.message}`);
+      return;
+    }
+
+    const { error: activateError } = await supabase
       .from("challenges")
       .update({ is_active: true })
       .eq("id", id);
-    if (!error) fetchChallenges();
+
+    if (activateError) {
+      setMessage(`Fel: ${activateError.message}`);
+    } else {
+      setMessage("Utmaningen är nu aktiv.");
+      fetchChallenges();
+    }
   };
 
   const handleDeleteChallenge = async (id: number) => {
@@ -432,14 +448,13 @@ function AdminChallenges() {
                 >
                   Redigera
                 </button>
-                {!c.is_active && (
-                  <button
-                    onClick={() => handleSetActive(c.id)}
-                    className="text-xs bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 px-3 py-1.5 rounded-xl font-medium shadow-sm"
-                  >
-                    Aktivera
-                  </button>
-                )}
+                <button
+                  onClick={() => handleSetActive(c.id)}
+                  disabled={c.is_active}
+                  className="text-xs bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 px-3 py-1.5 rounded-xl font-medium shadow-sm disabled:cursor-default disabled:opacity-60"
+                >
+                  {c.is_active ? "Aktiv" : "Aktivera"}
+                </button>
                 <button
                   onClick={() => handleDeleteChallenge(c.id)}
                   className="text-xs bg-rose-50 hover:bg-rose-100 text-rose-600 px-3 py-1.5 rounded-xl font-medium"
