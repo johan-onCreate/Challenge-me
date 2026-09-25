@@ -51,6 +51,7 @@ function Profile() {
   );
   const [isCurrentCompleted, setIsCurrentCompleted] = useState<boolean>(false);
   const [chosenTier, setChosenTier] = useState<string>("");
+  const [savedTier, setSavedTier] = useState<string>("");
   const [tierMessage, setTierMessage] = useState<string>("");
   const [tierLoading, setTierLoading] = useState<boolean>(false);
   const [totalPoints, setTotalPoints] = useState<number>(0);
