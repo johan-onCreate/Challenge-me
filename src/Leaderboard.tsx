@@ -10,6 +10,10 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import {
+  calculateTargetAveragePerDay,
+  calculateTargetProgress,
+} from "./leaderboardUtils";
 
 interface LeaderboardUser {
   userId: string;
@@ -141,24 +145,14 @@ function Leaderboard() {
           dateCursor.setUTCDate(dateCursor.getUTCDate() + 1);
         }
 
-        const elapsedDays = Math.max(
-          1,
-          Math.min(
-            chartDates.length,
-            Math.floor(
-              (Date.now() - startDate.getTime()) / (24 * 60 * 60 * 1000),
-            ) + 1,
-          ),
-        );
         const chartGroups: { [tier: string]: ChartPoint[] } = {};
 
         Object.keys(groups).forEach((tier) => {
           const tierLeaders = groups[tier];
-          const tierTotal = tierLeaders.reduce(
-            (sum, leader) => sum + leader.totalAmount,
-            0,
+          const targetAveragePerDay = calculateTargetAveragePerDay(
+            tier,
+            chartDates.length,
           );
-          const averagePerDay = tierTotal / elapsedDays;
           const cumulativeTotals: { [userId: string]: number } = {};
 
           tierLeaders.forEach((leader) => {
@@ -172,7 +166,11 @@ function Leaderboard() {
                 userDailyTotals[leader.userId]?.[date] || 0;
               point[leader.userId] = cumulativeTotals[leader.userId];
             });
-            point.average = averagePerDay * (index + 1);
+            point.average = calculateTargetProgress(
+              tier,
+              chartDates.length,
+              index + 1,
+            );
             return point;
           });
         });
@@ -220,7 +218,7 @@ function Leaderboard() {
               {(() => {
                 const tierLeaders = groupedLeaders[tier];
                 const chartData = groupedChartData[tier] || [];
-                const averagePerDay =
+                const targetAveragePerDay =
                   chartData.length > 0
                     ? Number(chartData[chartData.length - 1].average) /
                       chartData.length
@@ -263,7 +261,7 @@ function Leaderboard() {
                           <Tooltip
                             formatter={(value, name) => [
                               `${value} reps`,
-                              name === "average" ? "Snitt" : "Progress",
+                              name === "average" ? "Målsnitt" : "Progress",
                             ]}
                           />
                           <Legend />
@@ -286,11 +284,11 @@ function Leaderboard() {
                               dot={false}
                             />
                           ))}
-                          {averagePerDay > 0 && (
+                          {targetAveragePerDay > 0 && (
                             <Line
                               type="linear"
                               dataKey="average"
-                              name={`Snitt (${averagePerDay.toFixed(1)}/dag)`}
+                              name={`Målsnitt (${targetAveragePerDay.toFixed(1)}/dag)`}
                               stroke="#d97706"
                               strokeDasharray="6 4"
                               strokeWidth={3}
