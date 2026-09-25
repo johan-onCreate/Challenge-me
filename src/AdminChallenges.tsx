@@ -301,7 +301,7 @@ function AdminChallenges() {
           )}
         </div>
 
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">
               Poäng
@@ -372,7 +372,7 @@ function AdminChallenges() {
           {users.map((user) => (
             <div
               key={user.id}
-              className="flex items-center justify-between gap-3 bg-white p-3 rounded-lg border border-amber-100"
+              className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3 rounded-lg border border-amber-100"
             >
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-slate-900 truncate">
@@ -387,7 +387,7 @@ function AdminChallenges() {
                 type="button"
                 onClick={() => handleSendPasswordReset(user)}
                 disabled={!user.email || resettingUserId === user.id}
-                className="shrink-0 bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full sm:w-auto shrink-0 bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {resettingUserId === user.id ? "Skickar..." : "Återställ"}
               </button>
@@ -412,7 +412,7 @@ function AdminChallenges() {
           {challenges.map((c) => (
             <div
               key={c.id}
-              className={`p-4 border rounded-xl flex items-center justify-between gap-4 ${c.is_active ? "bg-indigo-50/40 border-indigo-200 shadow-sm" : "bg-white border-slate-200 shadow-sm"}`}
+              className={`p-4 border rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${c.is_active ? "bg-indigo-50/40 border-indigo-200 shadow-sm" : "bg-white border-slate-200 shadow-sm"}`}
             >
               <div className="space-y-1">
                 <div className="flex items-center gap-1.5 flex-wrap">
@@ -441,7 +441,7 @@ function AdminChallenges() {
                   </div>
                 )}
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <button
                   onClick={() => handleEditChallenge(c)}
                   className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1.5 rounded-xl font-medium"

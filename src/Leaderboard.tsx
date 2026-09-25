@@ -223,9 +223,8 @@ function Leaderboard() {
                     ? Number(chartData[chartData.length - 1].average) /
                       chartData.length
                     : 0;
-                const displayedTargetAveragePerDay = Math.ceil(
-                  targetAveragePerDay,
-                );
+                const displayedTargetAveragePerDay =
+                  Math.ceil(targetAveragePerDay);
 
                 return (
                   <>
