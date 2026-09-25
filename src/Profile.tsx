@@ -141,10 +141,14 @@ function Profile() {
 
       const { data: allUserChallenges } = await supabase
         .from("user_challenges")
-        .select(
-          "id, chosen_tier, completed_at, challenges(id, title, description, points)",
-        )
+        .select("id, challenge_id, chosen_tier, completed_at")
         .eq("user_id", user.id);
+      const { data: challengeRows } = await supabase
+        .from("challenges")
+        .select("id, title, description, points");
+      const challengeById = new Map(
+        (challengeRows || []).map((challenge) => [challenge.id, challenge]),
+      );
       const { data: userChallengeLogs } = await supabase
         .from("challenge_logs")
         .select("challenge_id, amount")
@@ -188,15 +192,24 @@ function Profile() {
       });
       if (allUserChallenges) {
         const points = allUserChallenges.reduce(
-          (sum: number, item: any) => sum + (item.challenges?.points || 0),
+          (sum: number, item: any) => {
+            const challenge = challengeById.get(item.challenge_id);
+            const totalAmount = totalsByChallenge.get(item.challenge_id) || 0;
+            return (
+              sum +
+              calculateEarnedPoints(
+                totalAmount,
+                item.chosen_tier || "",
+                challenge?.points || 0,
+              )
+            );
+          },
           0,
         );
         setTotalPoints(points);
 
         const previousChallenges = allUserChallenges.flatMap((item: any) => {
-          const challenge = Array.isArray(item.challenges)
-            ? item.challenges[0]
-            : item.challenges;
+          const challenge = challengeById.get(item.challenge_id);
 
           if (!challenge || challenge.id === activeChallenge?.id) return [];
 
