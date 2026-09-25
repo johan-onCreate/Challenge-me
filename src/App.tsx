@@ -88,7 +88,7 @@ function App() {
       </header>
 
       {/* Main Content Area */}
-      <main className="max-w-md mx-auto px-4 mt-12">
+      <main className="max-w-xl mx-auto px-4 mt-12">
         {user ? (
           <div className="space-y-6">
             
