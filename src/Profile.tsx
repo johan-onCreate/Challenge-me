@@ -9,6 +9,12 @@ interface Challenge {
   tiers?: string[];
 }
 
+interface LogEntry {
+  id: number;
+  amount: number;
+  logged_at: string;
+}
+
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
@@ -21,10 +27,31 @@ function Profile() {
 
   const [currentChallenge, setCurrentChallenge] = useState<Challenge | null>(null);
   const [isCurrentCompleted, setIsCurrentCompleted] = useState<boolean>(false);
-  const [chosenTier, setChosenTier] = useState<string>(''); // Användarens valda nivå
-  const [savedTier, setSavedTier] = useState<string>('');   // Den sparade nivån från DB
+  const [chosenTier, setChosenTier] = useState<string>(''); 
+  const [savedTier, setSavedTier] = useState<string>('');   
   const [totalPoints, setTotalPoints] = useState<number>(0);
   const [loadingChallenge, setLoadingChallenge] = useState<boolean>(true);
+
+  // NYTT: States för daglig loggning
+  const [logAmount, setLogAmount] = useState<string>('');
+  const [totalLoggedAmount, setTotalLoggedAmount] = useState<number>(0);
+  const [dailyLogs, setDailyLogs] = useState<LogEntry[]>([]);
+
+  // Funktion för att hämta loggar separat så vi kan uppdatera den live
+  const fetchChallengeLogs = async (userId: string, challengeId: number) => {
+    const { data: logs } = await supabase
+      .from('challenge_logs')
+      .select('id, amount, logged_at')
+      .eq('user_id', userId)
+      .eq('challenge_id', challengeId)
+      .order('logged_at', { ascending: false });
+
+    if (logs) {
+      setDailyLogs(logs);
+      const total = logs.reduce((sum, item) => sum + item.amount, 0);
+      setTotalLoggedAmount(total);
+    }
+  };
 
   useEffect(() => {
     async function getProfileAndChallenge() {
@@ -49,7 +76,6 @@ function Profile() {
       if (activeChallenge) {
         setCurrentChallenge(activeChallenge);
 
-        // Hämta om användaren har klarat utmaningen, och plocka med chosen_tier
         const { data: completedCheck } = await supabase
           .from('user_challenges')
           .select('id, chosen_tier')
@@ -60,6 +86,8 @@ function Profile() {
         if (completedCheck) {
           setIsCurrentCompleted(true);
           setSavedTier(completedCheck.chosen_tier || '');
+          // Hämta loggar om utmaningen är startad/antagen
+          fetchChallengeLogs(user.id, activeChallenge.id);
         }
       }
 
@@ -79,21 +107,18 @@ function Profile() {
     setProfileMessage('');
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-
     await supabase.from('profiles').upsert({ id: user.id, full_name: fullName, alias: alias, updated_at: new Date().toISOString() });
     setProfileMessage('✨ Profilen har sparats!');
     setProfileLoading(false);
   };
 
-  const handleCompleteChallenge = async () => {
+  // Välj nivå och påbörja utmaningen
+  const handleStartChallenge = async () => {
     if (!currentChallenge) return;
-    
-    // Spärr: Om det finns nivåer men användaren inte valt någon
     if (currentChallenge.tiers && currentChallenge.tiers.length > 0 && !chosenTier) {
-      alert("Vänligen välj en nivå innan du slutför utmaningen!");
+      alert("Vänligen välj en nivå innan du startar!");
       return;
     }
-
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
@@ -101,17 +126,43 @@ function Profile() {
       .from('user_challenges')
       .insert([{ user_id: user.id, challenge_id: currentChallenge.id, chosen_tier: chosenTier }]);
 
-    if (error) {
-      alert(`Kunde inte slutföra: ${error.message}`);
-    } else {
+    if (!error) {
       setIsCurrentCompleted(true);
       setSavedTier(chosenTier);
-      setTotalPoints(prev => prev + currentChallenge.points);
     }
   };
 
+  // Logga dagens reps/mängd
+  const handleLogDailyProgress = async (e: FormEvent) => {
+    e.preventDefault();
+    const amountNum = parseInt(logAmount);
+    if (isNaN(amountNum) || amountNum <= 0) return;
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user || !currentChallenge) return;
+
+    const { error } = await supabase
+      .from('challenge_logs')
+      .insert([{ 
+        user_id: user.id, 
+        challenge_id: currentChallenge.id, 
+        amount: amountNum 
+      }]);
+
+    if (error) {
+      alert(error.message);
+    } else {
+      setLogAmount('');
+      fetchChallengeLogs(user.id, currentChallenge.id); // Ladda om statistiken direkt på skärmen
+    }
+  };
+  // Räkna ut målet i siffror (t.ex. "3000 squats" -> 3000)
+  const targetNumber = parseInt(savedTier) || 0;
+  const progressPercent = targetNumber > 0 ? Math.min(Math.round((totalLoggedAmount / targetNumber) * 100), 100) : 0;
+
   return (
     <div className="space-y-8 animate-fade-in">
+      {/* Total XP Scoreboard */}
       <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white p-6 rounded-2xl shadow-md flex justify-between items-center">
         <div>
           <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Din totala poäng</p>
@@ -119,6 +170,7 @@ function Profile() {
         </div>
       </div>
 
+      {/* Aktuell utmaning */}
       <div className="space-y-4 border-t border-slate-100 pt-6">
         <h3 className="text-lg font-bold text-slate-900 tracking-tight">Aktuell utmaning</h3>
 
@@ -127,7 +179,7 @@ function Profile() {
         ) : !currentChallenge ? (
           <p className="text-sm text-slate-500 italic">Ingen aktiv utmaning just nu.</p>
         ) : (
-          <div className="p-5 border rounded-2xl bg-white border-slate-200 shadow-sm space-y-4">
+          <div className="p-5 border rounded-2xl bg-white border-slate-200 shadow-sm space-y-5">
             <div>
               <div className="flex items-center gap-2">
                 <h4 className="font-bold text-base text-slate-900">{currentChallenge.title}</h4>
@@ -136,40 +188,76 @@ function Profile() {
               <p className="text-sm text-slate-600 mt-1">{currentChallenge.description}</p>
             </div>
 
-            {/* PRESENTATION AV NIVÅER */}
-            {currentChallenge.tiers && currentChallenge.tiers.length > 0 && (
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-2">
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">Välj din utmaningsnivå:</label>
-                
-                {isCurrentCompleted ? (
-                  <p className="text-sm font-semibold text-slate-800">Valt mål: <span className="text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md">{savedTier}</span></p>
-                ) : (
-                  <div className="flex gap-4">
-                    {currentChallenge.tiers.map((t, idx) => (
-                      <label key={idx} className="flex items-center gap-1.5 text-sm font-medium text-slate-700 cursor-pointer">
-                        <input type="radio" name="tier" value={t} checked={chosenTier === t} onChange={(e) => setChosenTier(e.target.value)} className="text-blue-600 focus:ring-blue-500" />
-                        {t}
-                      </label>
-                    ))}
-                  </div>
-                )}
+            {/* OM INTE STARTAD: Välj nivå */}
+            {!isCurrentCompleted && currentChallenge.tiers && currentChallenge.tiers.length > 0 && (
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-3">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">Välj din målsättning:</label>
+                <div className="flex gap-4">
+                  {currentChallenge.tiers.map((t, idx) => (
+                    <label key={idx} className="flex items-center gap-1.5 text-sm font-medium text-slate-700 cursor-pointer">
+                      <input type="radio" name="tier" value={t} checked={chosenTier === t} onChange={(e) => setChosenTier(e.target.value)} className="text-blue-600" />
+                      {t}
+                    </label>
+                  ))}
+                </div>
+                <button onClick={handleStartChallenge} className="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-xl text-sm transition-colors">
+                  Anta utmaningen!
+                </button>
               </div>
             )}
 
-            <div className="flex justify-end pt-2">
-              {isCurrentCompleted ? (
-                <span className="text-sm font-semibold text-emerald-600 bg-emerald-50 px-4 py-2 rounded-xl border border-emerald-100">✅ Avklarad</span>
-              ) : (
-                <button onClick={handleCompleteChallenge} className="w-full sm:w-auto text-sm bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-5 rounded-xl shadow-sm">
-                  Jag har klarat det!
-                </button>
-              )}
-            </div>
+            {/* OM ANTAGEN/STARTAD: Visa Framstegsmätare och Loggnings-formulär */}
+            {isCurrentCompleted && (
+              <div className="space-y-5 border-t border-slate-100 pt-4">
+                
+                {/* Progress Bar */}
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-xs font-bold text-slate-600 uppercase">
+                    <span>Framsteg: {totalLoggedAmount} / {savedTier}</span>
+                    <span>{progressPercent}%</span>
+                  </div>
+                  <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden border border-slate-200/50">
+                    <div className="bg-emerald-500 h-full transition-all duration-500" style={{ width: `${progressPercent}%` }} />
+                  </div>
+                </div>
+
+                {/* Loggningsformulär */}
+                <form onSubmit={handleLogDailyProgress} className="flex gap-2">
+                  <input 
+                    type="number" 
+                    value={logAmount} 
+                    onChange={(e) => setLogAmount(e.target.value)} 
+                    placeholder="Hur många gjorde du idag?" 
+                    required 
+                    className="flex-1 px-3 py-2 border border-slate-200 rounded-xl text-sm outline-none focus:border-blue-600"
+                  />
+                  <button type="submit" className="bg-slate-900 hover:bg-slate-800 text-white font-semibold px-4 py-2 rounded-xl text-sm transition-colors">
+                    Logga reps
+                  </button>
+                </form>
+
+                {/* Historik / Senaste loggar */}
+                {dailyLogs.length > 0 && (
+                  <div className="space-y-1.5 pt-2">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500">Dina senaste loggar</label>
+                    <div className="max-h-28 overflow-y-auto space-y-1 border border-slate-100 rounded-lg p-2 bg-slate-50/50">
+                      {dailyLogs.map((log) => (
+                        <div key={log.id} className="flex justify-between text-xs text-slate-600 border-b border-slate-100/60 pb-1 last:border-0 last:pb-0">
+                          <span>📅 {log.logged_at}</span>
+                          <span className="font-bold text-slate-800">+{log.amount} reps</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      {/* Profilformulär */}
+      {/* Profilinställningar */}
       <div className="space-y-4 border-t border-slate-100 pt-6">
         <h3 className="text-lg font-bold text-slate-900 tracking-tight">Profilinställningar</h3>
         <form onSubmit={handleUpdateProfile} className="space-y-3">
