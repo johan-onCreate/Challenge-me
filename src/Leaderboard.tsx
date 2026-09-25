@@ -4,6 +4,7 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -14,6 +15,7 @@ interface LeaderboardUser {
   alias: string;
   fullName: string;
   totalAmount: number;
+  loggedDays: number;
   chosenTier: string;
 }
 
@@ -60,7 +62,7 @@ function Leaderboard() {
       // 4. Hämta alla dagliga loggar för denna specifika utmaning
       const { data: logs } = await supabase
         .from("challenge_logs")
-        .select("user_id, amount")
+        .select("user_id, amount, logged_at")
         .eq("challenge_id", activeChallenge.id);
 
       if (profiles && logs) {
@@ -71,8 +73,13 @@ function Leaderboard() {
 
         // Räkna ihop totalt antal reps per användar-ID
         const userTotals: { [key: string]: number } = {};
+        const userLogDays: { [key: string]: Set<string> } = {};
         logs.forEach((log) => {
           userTotals[log.user_id] = (userTotals[log.user_id] || 0) + log.amount;
+          if (!userLogDays[log.user_id]) {
+            userLogDays[log.user_id] = new Set();
+          }
+          userLogDays[log.user_id].add(log.logged_at);
         });
 
         // Bygg ihop användardata och förbered för gruppering
@@ -92,6 +99,7 @@ function Leaderboard() {
             alias: prof?.alias || "Anonym koder",
             fullName: prof?.full_name || "Okänt namn",
             totalAmount: userTotals[userId] || 0,
+            loggedDays: userLogDays[userId]?.size || 0,
             chosenTier: tier,
           };
 
@@ -145,51 +153,88 @@ function Leaderboard() {
           {/* Loopa igenom varje unik nivå och skapa en separat tabell */}
           {tierKeys.map((tier) => (
             <div key={tier} className="space-y-2.5">
-              <div className="flex items-center gap-2">
-                <span className="inline-block w-2 h-2 rounded-full bg-blue-600" />
-                <h4 className="text-sm font-bold uppercase tracking-wider text-slate-700">
-                  Mål: {tier}
-                </h4>
-                <span className="text-[10px] bg-slate-100 text-slate-500 font-medium px-2 py-0.5 rounded-md">
-                  {groupedLeaders[tier].length}{" "}
-                  {groupedLeaders[tier].length === 1
-                    ? "deltagare"
-                    : "deltagare"}
-                </span>
-              </div>
+              {(() => {
+                const tierLeaders = groupedLeaders[tier];
+                const totalAmount = tierLeaders.reduce(
+                  (sum, leader) => sum + leader.totalAmount,
+                  0,
+                );
+                const totalLoggedDays = tierLeaders.reduce(
+                  (sum, leader) => sum + leader.loggedDays,
+                  0,
+                );
+                const averagePerDay =
+                  totalLoggedDays > 0 ? totalAmount / totalLoggedDays : 0;
 
-              <div className="h-56 w-full rounded-xl border border-slate-100 bg-slate-50/60 p-2 sm:p-3">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={groupedLeaders[tier]}
-                    layout="vertical"
-                    margin={{ top: 4, right: 12, left: 4, bottom: 4 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                    <XAxis
-                      type="number"
-                      allowDecimals={false}
-                      tick={{ fontSize: 11 }}
-                      stroke="#94a3b8"
-                    />
-                    <YAxis
-                      type="category"
-                      dataKey="alias"
-                      width={88}
-                      tick={{ fontSize: 11 }}
-                      stroke="#94a3b8"
-                    />
-                    <Tooltip
-                      formatter={(value) => [`${value} reps`, "Progress"]}
-                    />
-                    <Bar
-                      dataKey="totalAmount"
-                      fill="#2563eb"
-                      radius={[0, 5, 5, 0]}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+                return (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <span className="inline-block w-2 h-2 rounded-full bg-blue-600" />
+                      <h4 className="text-sm font-bold uppercase tracking-wider text-slate-700">
+                        Mål: {tier}
+                      </h4>
+                      <span className="text-[10px] bg-slate-100 text-slate-500 font-medium px-2 py-0.5 rounded-md">
+                        {groupedLeaders[tier].length}{" "}
+                        {groupedLeaders[tier].length === 1
+                          ? "deltagare"
+                          : "deltagare"}
+                      </span>
+                    </div>
+
+                    <div className="h-72 w-full rounded-xl border border-slate-100 bg-slate-50/60 p-2 sm:p-3">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={groupedLeaders[tier]}
+                          margin={{ top: 8, right: 12, left: 0, bottom: 34 }}
+                        >
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            vertical={false}
+                          />
+                          <XAxis
+                            dataKey="alias"
+                            type="category"
+                            interval={0}
+                            angle={-35}
+                            textAnchor="end"
+                            height={54}
+                            tick={{ fontSize: 11 }}
+                            stroke="#94a3b8"
+                          />
+                          <YAxis
+                            type="number"
+                            allowDecimals={false}
+                            width={42}
+                            tick={{ fontSize: 11 }}
+                            stroke="#94a3b8"
+                          />
+                          <Tooltip
+                            formatter={(value) => [`${value} reps`, "Progress"]}
+                          />
+                          {averagePerDay > 0 && (
+                            <ReferenceLine
+                              y={averagePerDay}
+                              stroke="#d97706"
+                              strokeDasharray="6 4"
+                              label={{
+                                value: `Snitt/dag ${averagePerDay.toFixed(1)}`,
+                                position: "insideTopRight",
+                                fill: "#b45309",
+                                fontSize: 11,
+                              }}
+                            />
+                          )}
+                          <Bar
+                            dataKey="totalAmount"
+                            fill="#2563eb"
+                            radius={[5, 5, 0, 0]}
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </>
+                );
+              })()}
 
               <div className="overflow-hidden border border-slate-100 rounded-2xl shadow-sm bg-white">
                 <table className="w-full border-collapse text-left">
