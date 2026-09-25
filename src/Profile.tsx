@@ -191,21 +191,18 @@ function Profile() {
         participantsByGroup.set(groupKey, participants);
       });
       if (allUserChallenges) {
-        const points = allUserChallenges.reduce(
-          (sum: number, item: any) => {
-            const challenge = challengeById.get(item.challenge_id);
-            const totalAmount = totalsByChallenge.get(item.challenge_id) || 0;
-            return (
-              sum +
-              calculateEarnedPoints(
-                totalAmount,
-                item.chosen_tier || "",
-                challenge?.points || 0,
-              )
-            );
-          },
-          0,
-        );
+        const points = allUserChallenges.reduce((sum: number, item: any) => {
+          const challenge = challengeById.get(item.challenge_id);
+          const totalAmount = totalsByChallenge.get(item.challenge_id) || 0;
+          return (
+            sum +
+            calculateEarnedPoints(
+              totalAmount,
+              item.chosen_tier || "",
+              challenge?.points || 0,
+            )
+          );
+        }, 0);
         setTotalPoints(points);
 
         const previousChallenges = allUserChallenges.flatMap((item: any) => {
