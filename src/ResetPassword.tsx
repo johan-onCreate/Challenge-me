@@ -1,4 +1,4 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createClient } from "@supabase/supabase-js";
 
@@ -12,6 +12,27 @@ function ResetPassword() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [verifyingToken, setVerifyingToken] = useState(true);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tokenHash = params.get("token_hash");
+    const tokenType = params.get("type");
+
+    if (!tokenHash || tokenType !== "recovery") {
+      setVerifyingToken(false);
+      return;
+    }
+
+    supabase.auth
+      .verifyOtp({ token_hash: tokenHash, type: "recovery" })
+      .then(({ error }) => {
+        if (error) {
+          setMessage(`Fel: ${error.message}`);
+        }
+        setVerifyingToken(false);
+      });
+  }, []);
 
   const handlePasswordUpdate = async (event: FormEvent) => {
     event.preventDefault();
@@ -38,6 +59,14 @@ function ResetPassword() {
     }
     setLoading(false);
   };
+
+  if (verifyingToken) {
+    return (
+      <p className="text-sm text-slate-500 text-center py-6">
+        Verifierar återställningslänken...
+      </p>
+    );
+  }
 
   return (
     <div className="space-y-5 animate-fade-in">

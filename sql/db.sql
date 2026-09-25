@@ -108,10 +108,17 @@ CREATE TABLE IF NOT EXISTS public.challenge_logs (
 -- Stäng av RLS tillfälligt för detta test
 ALTER TABLE public.challenge_logs DISABLE ROW LEVEL SECURITY;
 
--- 1. Ta först bort eventuella gamla dubbletter om du har testat mycket
--- (Detta rensar logg-tabellen så att spärren kan skapas utan fel)
-TRUNCATE TABLE public.challenge_logs;
-
--- 2. Lägg till spärren som gör kombinationen av användare, challenge och datum unik
-ALTER TABLE public.challenge_logs
-ADD CONSTRAINT unique_user_challenge_date UNIQUE (user_id, challenge_id, logged_at);
+-- Lägg till spärren som gör kombinationen av användare, challenge och datum unik
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'unique_user_challenge_date'
+      AND conrelid = 'public.challenge_logs'::regclass
+  ) THEN
+    ALTER TABLE public.challenge_logs
+    ADD CONSTRAINT unique_user_challenge_date
+    UNIQUE (user_id, challenge_id, logged_at);
+  END IF;
+END $$;

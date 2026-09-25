@@ -1,6 +1,7 @@
 import { FormEvent, useState } from "react";
 import { Link } from "react-router-dom";
 import { createClient } from "@supabase/supabase-js";
+import { getPasswordResetRedirectUrl } from "./authConfig";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -16,7 +17,7 @@ function ForgotPassword() {
     setLoading(true);
     setMessage("");
 
-    const redirectTo = `${window.location.origin}/reset-password`;
+    const redirectTo = getPasswordResetRedirectUrl(window.location.origin);
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo,
     });

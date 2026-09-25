@@ -1,5 +1,6 @@
 import { useState, FormEvent, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
+import { getPasswordResetRedirectUrl } from "./authConfig";
 
 interface Challenge {
   id: number;
@@ -173,7 +174,7 @@ function AdminChallenges() {
     setResettingUserId(user.id);
     setUserMessage("");
 
-    const redirectTo = `${window.location.origin}/reset-password`;
+    const redirectTo = getPasswordResetRedirectUrl(window.location.origin);
     const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
       redirectTo,
     });
