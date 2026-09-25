@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import {
-  Bar,
-  BarChart,
   CartesianGrid,
-  ReferenceLine,
+  Legend,
+  Line,
+  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -12,11 +12,17 @@ import {
 } from "recharts";
 
 interface LeaderboardUser {
+  userId: string;
   alias: string;
   fullName: string;
   totalAmount: number;
   loggedDays: number;
   chosenTier: string;
+}
+
+interface ChartPoint {
+  date: string;
+  [participantId: string]: string | number;
 }
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -27,6 +33,9 @@ function Leaderboard() {
   const [groupedLeaders, setGroupedLeaders] = useState<{
     [tier: string]: LeaderboardUser[];
   }>({});
+  const [groupedChartData, setGroupedChartData] = useState<{
+    [tier: string]: ChartPoint[];
+  }>({});
   const [loading, setLoading] = useState<boolean>(true);
   const [challengeTitle, setChallengeTitle] = useState<string>("");
 
@@ -36,7 +45,7 @@ function Leaderboard() {
       const nowIso = new Date().toISOString();
       const { data: activeChallenge } = await supabase
         .from("challenges")
-        .select("id, title")
+        .select("id, title, start_date, end_date")
         .eq("is_active", true)
         .lte("start_date", nowIso)
         .gte("end_date", nowIso)
@@ -74,12 +83,20 @@ function Leaderboard() {
         // Räkna ihop totalt antal reps per användar-ID
         const userTotals: { [key: string]: number } = {};
         const userLogDays: { [key: string]: Set<string> } = {};
+        const userDailyTotals: {
+          [userId: string]: { [date: string]: number };
+        } = {};
         logs.forEach((log) => {
           userTotals[log.user_id] = (userTotals[log.user_id] || 0) + log.amount;
           if (!userLogDays[log.user_id]) {
             userLogDays[log.user_id] = new Set();
           }
           userLogDays[log.user_id].add(log.logged_at);
+          if (!userDailyTotals[log.user_id]) {
+            userDailyTotals[log.user_id] = {};
+          }
+          userDailyTotals[log.user_id][log.logged_at] =
+            (userDailyTotals[log.user_id][log.logged_at] || 0) + log.amount;
         });
 
         // Bygg ihop användardata och förbered för gruppering
@@ -96,6 +113,7 @@ function Leaderboard() {
           const tier = tierMap.get(userId) || "Ej vald";
 
           const userEntry: LeaderboardUser = {
+            userId,
             alias: prof?.alias || "Anonym koder",
             fullName: prof?.full_name || "Okänt namn",
             totalAmount: userTotals[userId] || 0,
@@ -114,7 +132,53 @@ function Leaderboard() {
           groups[tier].sort((a, b) => b.totalAmount - a.totalAmount);
         });
 
+        const startDate = new Date(activeChallenge.start_date);
+        const endDate = new Date(activeChallenge.end_date);
+        const chartDates: string[] = [];
+        const dateCursor = new Date(startDate);
+        while (dateCursor <= endDate) {
+          chartDates.push(dateCursor.toISOString().slice(0, 10));
+          dateCursor.setUTCDate(dateCursor.getUTCDate() + 1);
+        }
+
+        const elapsedDays = Math.max(
+          1,
+          Math.min(
+            chartDates.length,
+            Math.floor(
+              (Date.now() - startDate.getTime()) / (24 * 60 * 60 * 1000),
+            ) + 1,
+          ),
+        );
+        const chartGroups: { [tier: string]: ChartPoint[] } = {};
+
+        Object.keys(groups).forEach((tier) => {
+          const tierLeaders = groups[tier];
+          const tierTotal = tierLeaders.reduce(
+            (sum, leader) => sum + leader.totalAmount,
+            0,
+          );
+          const averagePerDay = tierTotal / elapsedDays;
+          const cumulativeTotals: { [userId: string]: number } = {};
+
+          tierLeaders.forEach((leader) => {
+            cumulativeTotals[leader.userId] = 0;
+          });
+
+          chartGroups[tier] = chartDates.map((date, index) => {
+            const point: ChartPoint = { date };
+            tierLeaders.forEach((leader) => {
+              cumulativeTotals[leader.userId] +=
+                userDailyTotals[leader.userId]?.[date] || 0;
+              point[leader.userId] = cumulativeTotals[leader.userId];
+            });
+            point.average = averagePerDay * (index + 1);
+            return point;
+          });
+        });
+
         setGroupedLeaders(groups);
+        setGroupedChartData(chartGroups);
       }
       setLoading(false);
     }
@@ -155,16 +219,12 @@ function Leaderboard() {
             <div key={tier} className="space-y-2.5">
               {(() => {
                 const tierLeaders = groupedLeaders[tier];
-                const totalAmount = tierLeaders.reduce(
-                  (sum, leader) => sum + leader.totalAmount,
-                  0,
-                );
-                const totalLoggedDays = tierLeaders.reduce(
-                  (sum, leader) => sum + leader.loggedDays,
-                  0,
-                );
+                const chartData = groupedChartData[tier] || [];
                 const averagePerDay =
-                  totalLoggedDays > 0 ? totalAmount / totalLoggedDays : 0;
+                  chartData.length > 0
+                    ? Number(chartData[chartData.length - 1].average) /
+                      chartData.length
+                    : 0;
 
                 return (
                   <>
@@ -181,23 +241,15 @@ function Leaderboard() {
                       </span>
                     </div>
 
-                    <div className="h-72 w-full rounded-xl border border-slate-100 bg-slate-50/60 p-2 sm:p-3">
+                    <div className="h-80 w-full rounded-xl border border-slate-100 bg-slate-50/60 p-2 sm:p-3">
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart
-                          data={groupedLeaders[tier]}
-                          margin={{ top: 8, right: 12, left: 0, bottom: 34 }}
+                        <LineChart
+                          data={chartData}
+                          margin={{ top: 8, right: 12, left: 0, bottom: 8 }}
                         >
-                          <CartesianGrid
-                            strokeDasharray="3 3"
-                            vertical={false}
-                          />
+                          <CartesianGrid strokeDasharray="3 3" />
                           <XAxis
-                            dataKey="alias"
-                            type="category"
-                            interval={0}
-                            angle={-35}
-                            textAnchor="end"
-                            height={54}
+                            dataKey="date"
                             tick={{ fontSize: 11 }}
                             stroke="#94a3b8"
                           />
@@ -209,27 +261,43 @@ function Leaderboard() {
                             stroke="#94a3b8"
                           />
                           <Tooltip
-                            formatter={(value) => [`${value} reps`, "Progress"]}
+                            formatter={(value, name) => [
+                              `${value} reps`,
+                              name === "average" ? "Snitt" : "Progress",
+                            ]}
                           />
+                          <Legend />
+                          {tierLeaders.map((leader, index) => (
+                            <Line
+                              key={leader.userId}
+                              type="monotone"
+                              dataKey={leader.userId}
+                              name={leader.alias}
+                              stroke={
+                                [
+                                  "#2563eb",
+                                  "#059669",
+                                  "#9333ea",
+                                  "#dc2626",
+                                  "#0891b2",
+                                ][index % 5]
+                              }
+                              strokeWidth={2}
+                              dot={false}
+                            />
+                          ))}
                           {averagePerDay > 0 && (
-                            <ReferenceLine
-                              y={averagePerDay}
+                            <Line
+                              type="linear"
+                              dataKey="average"
+                              name={`Snitt (${averagePerDay.toFixed(1)}/dag)`}
                               stroke="#d97706"
                               strokeDasharray="6 4"
-                              label={{
-                                value: `Snitt/dag ${averagePerDay.toFixed(1)}`,
-                                position: "insideTopRight",
-                                fill: "#b45309",
-                                fontSize: 11,
-                              }}
+                              strokeWidth={3}
+                              dot={false}
                             />
                           )}
-                          <Bar
-                            dataKey="totalAmount"
-                            fill="#2563eb"
-                            radius={[5, 5, 0, 0]}
-                          />
-                        </BarChart>
+                        </LineChart>
                       </ResponsiveContainer>
                     </div>
                   </>
