@@ -223,6 +223,9 @@ function Leaderboard() {
                     ? Number(chartData[chartData.length - 1].average) /
                       chartData.length
                     : 0;
+                const displayedTargetAveragePerDay = Math.ceil(
+                  targetAveragePerDay,
+                );
 
                 return (
                   <>
@@ -288,7 +291,7 @@ function Leaderboard() {
                             <Line
                               type="linear"
                               dataKey="average"
-                              name={`Målsnitt (${targetAveragePerDay.toFixed(1)}/dag)`}
+                              name={`Målsnitt (${displayedTargetAveragePerDay}/dag)`}
                               stroke="#d97706"
                               strokeDasharray="6 4"
                               strokeWidth={3}
