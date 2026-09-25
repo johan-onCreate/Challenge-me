@@ -2,25 +2,27 @@ import { useEffect, useState } from 'react';
 import { createClient, User } from '@supabase/supabase-js';
 import Register from './Register';
 import Login from './Login';
-import Profile from './Profile'; // Denna skapade vi i förra steget
+import Profile from './Profile';
+import AdminChallenges from './AdminChallenges';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+const ADMIN_EMAILS = ['din-mejl@exempel.com']; 
+
 function App() {
   const [user, setUser] = useState<User | null>(null);
   const [authView, setAuthView] = useState<'login' | 'register'>('login');
+  const [userView, setUserView] = useState<'profile' | 'admin'>('profile');
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    // 1. Kontrollera om det redan finns en aktiv session när appen startar
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user);
       setLoading(false);
     });
 
-    // 2. Lyssna live på förändringar (Inloggning / Utloggning)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
     });
@@ -28,63 +30,92 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-  };
+  const isAdmin = user && user.email && ADMIN_EMAILS.includes(user.email);
 
-  if (loading) return <p style={{ padding: '20px' }}>Laddar appen...</p>;
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-slate-50">
+        <p className="text-lg font-medium text-slate-500 animate-pulse">Laddar appen...</p>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ fontFamily: 'sans-serif', padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', paddingBottom: '10px', borderBottom: '1px solid #eee' }}>
-        <h1>Min Supabase App</h1>
-        
-        {/* Visa utloggningsknapp samt välkomsthälsning om användaren är inloggad */}
-        {user && (
-          <div>
-            <span style={{ marginRight: '15px' }}>
-              Välkommen, <strong>{user.user_metadata?.alias || user.email}</strong>!
-            </span>
-            <button onClick={handleLogout} style={{ padding: '6px 12px', background: '#ff4d4d', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-              Logga ut
-            </button>
-          </div>
-        )}
+    <div className="min-h-screen bg-slate-50 pb-12">
+      {/* Header */}
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+        <div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
+          <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+            ⚡️ Supabase Portal
+          </h1>
+          
+          {user && (
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-slate-600">
+                Inloggad: <strong className="text-slate-900 font-semibold">{user.user_metadata?.alias || user.email}</strong>
+                {isAdmin && <span className="ml-1.5 text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-bold">Admin</span>}
+              </span>
+              <button 
+                onClick={() => supabase.auth.signOut()}
+                className="text-sm bg-rose-50 text-rose-600 hover:bg-rose-100 px-3 h-8 font-medium rounded-lg transition-colors"
+              >
+                Logga ut
+              </button>
+            </div>
+          )}
+        </div>
       </header>
 
-      {/* REGLER FÖR VAD SOM VISAS PÅ SKÄRMEN */}
-      {user ? (
-        // OM ANVÄNDAREN ÄR INLOGGAD: Visa profilsidan där de anger namn/alias
-        <div>
-          <div style={{ background: '#e6f7ff', padding: '10px', borderRadius: '4px', marginBottom: '20px' }}>
-            🎉 Du är säkert inloggad!
-          </div>
-          <Profile />
-        </div>
-      ) : (
-        // OM ANVÄNDAREN ÄR UTLOGGAD: Visa inloggning eller registrering
-        <div>
-          <nav style={{ marginBottom: '20px', display: 'flex', gap: '10px' }}>
-            <button 
-              onClick={() => setAuthView('login')} 
-              style={{ padding: '8px 16px', fontWeight: authView === 'login' ? 'bold' : 'normal' }}
-            >
-              Logga in
-            </button>
-            <button 
-              onClick={() => setAuthView('register')} 
-              style={{ padding: '8px 16px', fontWeight: authView === 'register' ? 'bold' : 'normal' }}
-            >
-              Skapa konto
-            </button>
-          </nav>
+      {/* Main Content Area */}
+      <main className="max-w-md mx-auto px-4 mt-12">
+        {user ? (
+          <div className="space-y-6">
+            
+            {/* Om användaren är admin, visa meny */}
+            {isAdmin && (
+              <div className="flex bg-slate-200 p-1 rounded-xl">
+                <button 
+                  onClick={() => setUserView('profile')} 
+                  className={`flex-1 text-center py-2 text-sm font-medium rounded-lg transition-all ${userView === 'profile' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+                >
+                  Min Profil
+                </button>
+                <button 
+                  onClick={() => setUserView('admin')} 
+                  className={`flex-1 text-center py-2 text-sm font-medium rounded-lg transition-all ${userView === 'admin' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+                >
+                  Admin-panel
+                </button>
+              </div>
+            )}
 
-          {authView === 'login' ? <Login /> : <Register />}
-        </div>
-      )}
+            <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm">
+              {userView === 'admin' && isAdmin ? <AdminChallenges /> : <Profile />}
+            </div>
+          </div>
+        ) : (
+          <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm space-y-6">
+            <div className="flex bg-slate-100 p-1 rounded-xl">
+              <button 
+                onClick={() => setAuthView('login')} 
+                className={`flex-1 text-center py-2 text-sm font-medium rounded-lg transition-all ${authView === 'login' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+              >
+                Logga in
+              </button>
+              <button 
+                onClick={() => setAuthView('register')} 
+                className={`flex-1 text-center py-2 text-sm font-medium rounded-lg transition-all ${authView === 'register' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+              >
+                Skapa konto
+              </button>
+            </div>
+
+            {authView === 'login' ? <Login /> : <Register />}
+          </div>
+        )}
+      </main>
     </div>
   );
 }
 
 export default App;
-
