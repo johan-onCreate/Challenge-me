@@ -3,6 +3,8 @@ import { createClient, User } from "@supabase/supabase-js";
 import { Navigate, NavLink, Route, Routes } from "react-router-dom";
 import Register from "./Register";
 import Login from "./Login";
+import ForgotPassword from "./ForgotPassword";
+import ResetPassword from "./ResetPassword";
 import Profile from "./Profile";
 import AdminChallenges from "./AdminChallenges";
 import Leaderboard from "./Leaderboard";
@@ -133,6 +135,11 @@ function App() {
           <Routes>
             <Route path="/login" element={publicRoute(<Login />)} />
             <Route path="/register" element={publicRoute(<Register />)} />
+            <Route
+              path="/forgot-password"
+              element={publicRoute(<ForgotPassword />)}
+            />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/profile" element={protectedRoute(<Profile />)} />
             <Route
               path="/leaderboard"

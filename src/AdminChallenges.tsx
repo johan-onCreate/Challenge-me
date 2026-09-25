@@ -33,6 +33,9 @@ function AdminChallenges() {
   const [editingChallengeId, setEditingChallengeId] = useState<number | null>(
     null,
   );
+  const [resetEmail, setResetEmail] = useState<string>("");
+  const [resetMessage, setResetMessage] = useState<string>("");
+  const [resetLoading, setResetLoading] = useState<boolean>(false);
 
   const fetchChallenges = async () => {
     const { data } = await supabase
@@ -138,6 +141,25 @@ function AdminChallenges() {
     const { error } = await supabase.from("challenges").delete().eq("id", id);
     if (!error) fetchChallenges();
   };
+
+  const handleSendPasswordReset = async (e: FormEvent) => {
+    e.preventDefault();
+    setResetLoading(true);
+    setResetMessage("");
+
+    const redirectTo = `${window.location.origin}/reset-password`;
+    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+      redirectTo,
+    });
+
+    setResetMessage(
+      error
+        ? `Fel: ${error.message}`
+        : "Om adressen finns registrerad har ett återställningsmail skickats.",
+    );
+    setResetLoading(false);
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
@@ -293,6 +315,44 @@ function AdminChallenges() {
           {message}
         </div>
       )}
+
+      <form
+        onSubmit={handleSendPasswordReset}
+        className="space-y-3 bg-amber-50 p-4 rounded-xl border border-amber-100"
+      >
+        <div>
+          <h4 className="font-bold text-sm text-slate-900">
+            Återställ användarlösenord
+          </h4>
+          <p className="text-xs text-slate-600 mt-1">
+            Skicka en säker återställningslänk till användarens e-postadress.
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <input
+            type="email"
+            value={resetEmail}
+            onChange={(e) => setResetEmail(e.target.value)}
+            required
+            placeholder="användare@domän.se"
+            className="flex-1 px-3 py-2 border border-amber-200 rounded-lg text-sm bg-white outline-none focus:border-amber-500"
+          />
+          <button
+            type="submit"
+            disabled={resetLoading}
+            className="bg-amber-600 hover:bg-amber-700 text-white px-3 py-2 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {resetLoading ? "Skickar..." : "Skicka länk"}
+          </button>
+        </div>
+        {resetMessage && (
+          <p
+            className={`text-xs font-medium ${resetMessage.startsWith("Fel") ? "text-rose-600" : "text-emerald-700"}`}
+          >
+            {resetMessage}
+          </p>
+        )}
+      </form>
 
       {/* LISTA MED UTMANINGAR */}
       <div className="space-y-3 pt-4 border-t border-slate-100">
