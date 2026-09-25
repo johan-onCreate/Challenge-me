@@ -5,7 +5,7 @@ import {
   calculateProgressPercent,
   canChangeTier,
 } from "./profileUtils";
-import { getChallengeDates } from "./calendarUtils";
+import { getChallengeDates, getIsoWeekNumber } from "./calendarUtils";
 
 interface Challenge {
   id: number;
@@ -541,6 +541,23 @@ function Profile() {
     ...Array.from({ length: calendarStartOffset }, () => null),
     ...challengeDates,
   ];
+  const calendarGridCells: Array<
+    | { type: "week"; weekNumber: number | null }
+    | { type: "day"; date: string | null }
+  > = [];
+  for (let index = 0; index < calendarCells.length; index += 7) {
+    const weekDays = calendarCells.slice(index, index + 7);
+    const firstDate = weekDays.find((date): date is string => Boolean(date));
+    calendarGridCells.push({
+      type: "week",
+      weekNumber: firstDate ? getIsoWeekNumber(firstDate) : null,
+    });
+    weekDays.forEach((date) => calendarGridCells.push({ type: "day", date }));
+  }
+  const calendarMonthLabel =
+    minDate && maxDate
+      ? `${new Date(`${minDate}T00:00:00`).toLocaleDateString("sv-SE", { month: "long", year: "numeric" })} – ${new Date(`${maxDate}T00:00:00`).toLocaleDateString("sv-SE", { month: "long", year: "numeric" })}`
+      : "";
   const todayDate = toLocalDateKey(new Date());
 
   return (
@@ -957,20 +974,36 @@ function Profile() {
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="text-xs font-bold uppercase tracking-wider text-slate-600">
                     Kalender
+                    <span className="ml-2 font-medium normal-case text-slate-500">
+                      {calendarMonthLabel}
+                    </span>
                   </span>
                   <span className="text-[11px] text-slate-500">
                     Klicka på en dag för att logga aktivitet
                   </span>
                 </div>
-                <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                <div className="grid grid-cols-8 gap-1 text-center text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                  <span>V</span>
                   {["Sön", "Mån", "Tis", "Ons", "Tor", "Fre", "Lör"].map(
                     (day) => (
                       <span key={day}>{day}</span>
                     ),
                   )}
                 </div>
-                <div className="grid grid-cols-7 gap-1">
-                  {calendarCells.map((date, index) => {
+                <div className="grid grid-cols-8 gap-1">
+                  {calendarGridCells.map((cell, index) => {
+                    if (cell.type === "week") {
+                      return (
+                        <div
+                          key={`week-${index}`}
+                          className="flex min-h-14 items-center justify-center rounded-lg bg-slate-100 text-[10px] font-bold text-slate-500"
+                        >
+                          {cell.weekNumber ? `V${cell.weekNumber}` : ""}
+                        </div>
+                      );
+                    }
+
+                    const date = cell.date;
                     if (!date) {
                       return (
                         <div key={`empty-${index}`} className="min-h-14" />
