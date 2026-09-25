@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { createClient, User } from "@supabase/supabase-js";
-import { Navigate, NavLink, Route, Routes } from "react-router-dom";
+import { Link, Navigate, NavLink, Route, Routes } from "react-router-dom";
 import Register from "./Register";
 import Login from "./Login";
 import ForgotPassword from "./ForgotPassword";
 import ResetPassword from "./ResetPassword";
+import ChangePassword from "./ChangePassword";
 import Profile from "./Profile";
 import AdminChallenges from "./AdminChallenges";
 import Leaderboard from "./Leaderboard";
@@ -91,6 +92,12 @@ function App() {
                   </span>
                 )}
               </span>
+              <Link
+                to="/change-password"
+                className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+              >
+                Byt lösenord
+              </Link>
               <button
                 onClick={() => supabase.auth.signOut()}
                 className="text-xs bg-rose-50 text-rose-600 hover:bg-rose-100 px-2.5 py-1.5 font-medium rounded-lg transition-colors"
@@ -140,6 +147,10 @@ function App() {
               element={publicRoute(<ForgotPassword />)}
             />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route
+              path="/change-password"
+              element={protectedRoute(<ChangePassword />)}
+            />
             <Route path="/profile" element={protectedRoute(<Profile />)} />
             <Route
               path="/leaderboard"

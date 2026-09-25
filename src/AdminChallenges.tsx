@@ -12,6 +12,14 @@ interface Challenge {
   tiers: string[];
 }
 
+interface UserProfile {
+  id: string;
+  email: string | null;
+  full_name: string | null;
+  alias: string | null;
+  is_admin: boolean;
+}
+
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
@@ -33,9 +41,9 @@ function AdminChallenges() {
   const [editingChallengeId, setEditingChallengeId] = useState<number | null>(
     null,
   );
-  const [resetEmail, setResetEmail] = useState<string>("");
-  const [resetMessage, setResetMessage] = useState<string>("");
-  const [resetLoading, setResetLoading] = useState<boolean>(false);
+  const [users, setUsers] = useState<UserProfile[]>([]);
+  const [userMessage, setUserMessage] = useState<string>("");
+  const [resettingUserId, setResettingUserId] = useState<string | null>(null);
 
   const fetchChallenges = async () => {
     const { data } = await supabase
@@ -45,8 +53,22 @@ function AdminChallenges() {
     if (data) setChallenges(data);
   };
 
+  const fetchUsers = async () => {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id, email, full_name, alias, is_admin")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      setUserMessage(`Fel: ${error.message}`);
+    } else if (data) {
+      setUsers(data);
+    }
+  };
+
   useEffect(() => {
     fetchChallenges();
+    fetchUsers();
   }, []);
 
   const handleAddTier = () => {
@@ -142,22 +164,26 @@ function AdminChallenges() {
     if (!error) fetchChallenges();
   };
 
-  const handleSendPasswordReset = async (e: FormEvent) => {
-    e.preventDefault();
-    setResetLoading(true);
-    setResetMessage("");
+  const handleSendPasswordReset = async (user: UserProfile) => {
+    if (!user.email) {
+      setUserMessage("Fel: Användaren saknar en e-postadress.");
+      return;
+    }
+
+    setResettingUserId(user.id);
+    setUserMessage("");
 
     const redirectTo = `${window.location.origin}/reset-password`;
-    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+    const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
       redirectTo,
     });
 
-    setResetMessage(
+    setUserMessage(
       error
         ? `Fel: ${error.message}`
         : "Om adressen finns registrerad har ett återställningsmail skickats.",
     );
-    setResetLoading(false);
+    setResettingUserId(null);
   };
 
   return (
@@ -316,43 +342,49 @@ function AdminChallenges() {
         </div>
       )}
 
-      <form
-        onSubmit={handleSendPasswordReset}
-        className="space-y-3 bg-amber-50 p-4 rounded-xl border border-amber-100"
-      >
+      <div className="space-y-3 bg-amber-50 p-4 rounded-xl border border-amber-100">
         <div>
           <h4 className="font-bold text-sm text-slate-900">
-            Återställ användarlösenord
+            Användare ({users.length})
           </h4>
           <p className="text-xs text-slate-600 mt-1">
-            Skicka en säker återställningslänk till användarens e-postadress.
+            Skicka en säker återställningslänk till en användare.
           </p>
         </div>
-        <div className="flex gap-2">
-          <input
-            type="email"
-            value={resetEmail}
-            onChange={(e) => setResetEmail(e.target.value)}
-            required
-            placeholder="användare@domän.se"
-            className="flex-1 px-3 py-2 border border-amber-200 rounded-lg text-sm bg-white outline-none focus:border-amber-500"
-          />
-          <button
-            type="submit"
-            disabled={resetLoading}
-            className="bg-amber-600 hover:bg-amber-700 text-white px-3 py-2 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {resetLoading ? "Skickar..." : "Skicka länk"}
-          </button>
+        <div className="space-y-2">
+          {users.map((user) => (
+            <div
+              key={user.id}
+              className="flex items-center justify-between gap-3 bg-white p-3 rounded-lg border border-amber-100"
+            >
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-slate-900 truncate">
+                  {user.alias || user.full_name || "Namnlös användare"}
+                  {user.is_admin && " (admin)"}
+                </p>
+                <p className="text-xs text-slate-500 truncate">
+                  {user.email || "Ingen e-postadress"}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleSendPasswordReset(user)}
+                disabled={!user.email || resettingUserId === user.id}
+                className="shrink-0 bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {resettingUserId === user.id ? "Skickar..." : "Återställ"}
+              </button>
+            </div>
+          ))}
         </div>
-        {resetMessage && (
+        {userMessage && (
           <p
-            className={`text-xs font-medium ${resetMessage.startsWith("Fel") ? "text-rose-600" : "text-emerald-700"}`}
+            className={`text-xs font-medium ${userMessage.startsWith("Fel") ? "text-rose-600" : "text-emerald-700"}`}
           >
-            {resetMessage}
+            {userMessage}
           </p>
         )}
-      </form>
+      </div>
 
       {/* LISTA MED UTMANINGAR */}
       <div className="space-y-3 pt-4 border-t border-slate-100">

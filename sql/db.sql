@@ -5,11 +5,21 @@
 -- 1. TABELL: profiles (Användarprofiler kopplade till Supabase Auth)
 CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
+  email TEXT,
   full_name TEXT,
   alias TEXT UNIQUE,
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+ALTER TABLE public.profiles
+ADD COLUMN IF NOT EXISTS email TEXT;
+
+UPDATE public.profiles AS profiles
+SET email = users.email
+FROM auth.users AS users
+WHERE profiles.id = users.id
+  AND profiles.email IS NULL;
 
 -- Lägg till en admin-kolumn i profiles-tabellen
 ALTER TABLE public.profiles 
@@ -65,9 +75,10 @@ ALTER TABLE public.user_challenges DISABLE ROW LEVEL SECURITY;
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO public.profiles (id, full_name, alias)
+  INSERT INTO public.profiles (id, email, full_name, alias)
   VALUES (
     new.id, 
+    new.email,
     new.raw_user_meta_data->>'full_name', 
     new.raw_user_meta_data->>'alias'
   )
