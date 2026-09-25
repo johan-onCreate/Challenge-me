@@ -82,10 +82,11 @@ BEGIN
     new.raw_user_meta_data->>'full_name', 
     new.raw_user_meta_data->>'alias'
   )
-  ON CONFLICT (id) DO NOTHING; -- Säkrar om profilen redan skulle finnas
+  ON CONFLICT (id) DO UPDATE
+  SET email = EXCLUDED.email; -- Håll e-postadressen synkroniserad med Auth
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- Ta bort gammal trigger om den finns, för att undvika dubbletter innan vi skapar den på nytt
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
