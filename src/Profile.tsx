@@ -5,6 +5,7 @@ import {
   calculateProgressPercent,
   canChangeTier,
 } from "./profileUtils";
+import { getChallengeDates, getIsoWeekNumber } from "./calendarUtils";
 
 interface Challenge {
   id: number;
@@ -531,15 +532,8 @@ function Profile() {
   );
   const toLocalDateKey = (date: Date) =>
     `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-  const challengeDates: string[] = [];
-  if (minDate && maxDate) {
-    const dateCursor = new Date(`${minDate}T00:00:00`);
-    const lastDate = new Date(`${maxDate}T00:00:00`);
-    while (dateCursor <= lastDate) {
-      challengeDates.push(toLocalDateKey(dateCursor));
-      dateCursor.setDate(dateCursor.getDate() + 1);
-    }
-  }
+  const challengeDates =
+    minDate && maxDate ? getChallengeDates(minDate, maxDate) : [];
   const calendarStartOffset = minDate
     ? new Date(`${minDate}T00:00:00`).getDay()
     : 0;
@@ -547,6 +541,23 @@ function Profile() {
     ...Array.from({ length: calendarStartOffset }, () => null),
     ...challengeDates,
   ];
+  const calendarDisplayCells: Array<{
+    date: string | null;
+    weekNumber?: number;
+  }> = [];
+  for (let index = 0; index < calendarCells.length; index += 7) {
+    const weekDays = calendarCells.slice(index, index + 7);
+    const firstDate = weekDays.find((date): date is string => Boolean(date));
+    calendarDisplayCells.push({
+      date: null,
+      weekNumber: firstDate ? getIsoWeekNumber(firstDate) : undefined,
+    });
+    weekDays.forEach((date) => calendarDisplayCells.push({ date }));
+  }
+  const calendarMonthLabel =
+    minDate && maxDate
+      ? `${new Date(`${minDate}T00:00:00`).toLocaleDateString("sv-SE", { month: "long", year: "numeric" })} – ${new Date(`${maxDate}T00:00:00`).toLocaleDateString("sv-SE", { month: "long", year: "numeric" })}`
+      : "";
   const todayDate = toLocalDateKey(new Date());
 
   return (
