@@ -9,33 +9,54 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-const ADMIN_EMAILS = ['din-mejl@exempel.com']; 
-
 function App() {
   const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false); // Sparar admin-status från DB
   const [authView, setAuthView] = useState<'login' | 'register'>('login');
   const [userView, setUserView] = useState<'profile' | 'admin'>('profile');
   const [loading, setLoading] = useState<boolean>(true);
 
+  // Hjälpfunktion för att kolla om profilen i databasen är markerad som admin
+  const checkAdminStatus = async (userId: string) => {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', userId)
+      .maybeSingle();
+    
+    setIsAdmin(profile?.is_admin || false);
+  };
+
   useEffect(() => {
+    // 1. Kontrollera session vid start
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user);
+      if (user) {
+        checkAdminStatus(user.id);
+      }
       setLoading(false);
     });
 
+    // 2. Lyssna live på när någon loggar in eller ut
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      
+      if (currentUser) {
+        checkAdminStatus(currentUser.id);
+      } else {
+        setIsAdmin(false);
+        setUserView('profile'); // Återställ vy vid utloggning
+      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  const isAdmin = user && user.email && ADMIN_EMAILS.includes(user.email);
-
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center bg-slate-50">
-        <p className="text-lg font-medium text-slate-500 animate-pulse">Laddar appen...</p>
+        <p className="text-lg font-medium text-slate-500 animate-pulse">Laddar portalen...</p>
       </div>
     );
   }
@@ -71,9 +92,9 @@ function App() {
         {user ? (
           <div className="space-y-6">
             
-            {/* Om användaren är admin, visa meny */}
+            {/* Flikmeny - Visas ENBART om databasen säger att du är admin */}
             {isAdmin && (
-              <div className="flex bg-slate-200 p-1 rounded-xl">
+              <div className="flex bg-slate-200 p-1 rounded-xl shadow-sm">
                 <button 
                   onClick={() => setUserView('profile')} 
                   className={`flex-1 text-center py-2 text-sm font-medium rounded-lg transition-all ${userView === 'profile' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
