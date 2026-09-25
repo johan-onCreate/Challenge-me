@@ -225,7 +225,8 @@ function Profile() {
   };
 
   const handleCancelChallenge = async () => {
-    if (cancelPhrase !== "Jag skäms" || !currentChallenge) return;
+    const normalizedPhrase = cancelPhrase.trim().toLocaleLowerCase("sv-SE");
+    if (normalizedPhrase !== "jag skäms" || !currentChallenge) return;
 
     setCancelLoading(true);
     setCancelMessage("");
@@ -301,6 +302,8 @@ function Profile() {
 
   const handleLogDailyProgress = async (e: FormEvent) => {
     e.preventDefault();
+    if (!isCurrentCompleted || !currentChallenge) return;
+
     const amountNum = parseInt(logAmount);
     if (isNaN(amountNum) || amountNum <= 0 || !logDate) return;
 
@@ -337,6 +340,8 @@ function Profile() {
 
   // NYTT: Spara en ändrad historisk logg
   const handleUpdateLog = async (logId: number, loggedAt: string) => {
+    if (!isCurrentCompleted || !currentChallenge) return;
+
     const amountNum = parseInt(editingAmount);
     if (isNaN(amountNum) || amountNum < 0) return;
 
@@ -363,7 +368,9 @@ function Profile() {
   };
 
   const handleUpdateCalendarLog = async () => {
-    if (!editingCalendarDate || !currentChallenge) return;
+    if (!isCurrentCompleted || !editingCalendarDate || !currentChallenge) {
+      return;
+    }
 
     const amountNum = parseInt(editingCalendarAmount, 10);
     if (isNaN(amountNum) || amountNum < 0) return;
@@ -400,6 +407,8 @@ function Profile() {
 
   // NYTT: Radera en historisk logg helt
   const handleDeleteLog = async (logId: number) => {
+    if (!isCurrentCompleted || !currentChallenge) return;
+
     if (!window.confirm("Vill du ta bort denna loggning permanent?")) return;
 
     const {
@@ -1020,7 +1029,10 @@ function Profile() {
               <button
                 type="button"
                 onClick={handleCancelChallenge}
-                disabled={cancelLoading || cancelPhrase !== "Jag skäms"}
+                disabled={
+                  cancelLoading ||
+                  cancelPhrase.trim().toLocaleLowerCase("sv-SE") !== "jag skäms"
+                }
                 className="flex-1 rounded-xl bg-rose-600 py-2 text-sm font-semibold text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {cancelLoading ? "Avbryter..." : "Avbryt challenge"}
