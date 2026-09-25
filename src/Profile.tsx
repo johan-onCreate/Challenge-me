@@ -34,6 +34,8 @@ function Profile() {
   const [isCurrentCompleted, setIsCurrentCompleted] = useState<boolean>(false);
   const [chosenTier, setChosenTier] = useState<string>("");
   const [savedTier, setSavedTier] = useState<string>("");
+  const [tierMessage, setTierMessage] = useState<string>("");
+  const [tierLoading, setTierLoading] = useState<boolean>(false);
   const [totalPoints, setTotalPoints] = useState<number>(0);
   const [loadingChallenge, setLoadingChallenge] = useState<boolean>(true);
 
@@ -101,7 +103,9 @@ function Profile() {
 
         if (completedCheck) {
           setIsCurrentCompleted(true);
-          setSavedTier(completedCheck.chosen_tier || "");
+          const selectedTier = completedCheck.chosen_tier || "";
+          setChosenTier(selectedTier);
+          setSavedTier(selectedTier);
           fetchChallengeLogs(user.id, activeChallenge.id);
         }
       }
@@ -171,6 +175,32 @@ function Profile() {
       setIsCurrentCompleted(true);
       setSavedTier(chosenTier);
     }
+  };
+
+  const handleChangeTier = async () => {
+    if (!currentChallenge || !chosenTier || chosenTier === savedTier) return;
+
+    setTierLoading(true);
+    setTierMessage("");
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { error } = await supabase
+      .from("user_challenges")
+      .update({ chosen_tier: chosenTier })
+      .eq("user_id", user.id)
+      .eq("challenge_id", currentChallenge.id);
+
+    if (error) {
+      setTierMessage(`Fel: ${error.message}`);
+    } else {
+      setSavedTier(chosenTier);
+      setTierMessage("Nivån har uppdaterats!");
+    }
+    setTierLoading(false);
   };
 
   const handleLogDailyProgress = async (e: FormEvent) => {
@@ -351,6 +381,50 @@ function Profile() {
             {/* PROGRESS MÄTARE & LOGGNING */}
             {isCurrentCompleted && (
               <div className="space-y-5 border-t border-slate-100 pt-4">
+                {currentChallenge.tiers && currentChallenge.tiers.length > 0 && (
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-3">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">
+                      Ändra nivå
+                    </label>
+                    <div className="flex flex-wrap gap-4">
+                      {currentChallenge.tiers.map((tier, index) => (
+                        <label
+                          key={index}
+                          className="flex items-center gap-1.5 text-sm font-medium text-slate-700 cursor-pointer"
+                        >
+                          <input
+                            type="radio"
+                            name="saved-tier"
+                            value={tier}
+                            checked={chosenTier === tier}
+                            onChange={(e) => {
+                              setChosenTier(e.target.value);
+                              setTierMessage("");
+                            }}
+                            className="text-blue-600"
+                          />
+                          {tier}
+                        </label>
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleChangeTier}
+                      disabled={tierLoading || chosenTier === savedTier}
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-xl text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {tierLoading ? "Sparar..." : "Spara ny nivå"}
+                    </button>
+                    {tierMessage && (
+                      <p
+                        className={`text-xs font-medium ${tierMessage.startsWith("Fel") ? "text-rose-600" : "text-emerald-600"}`}
+                      >
+                        {tierMessage}
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 {/* Progress Bar */}
                 <div className="space-y-1.5">
                   <div className="flex justify-between text-xs font-bold text-slate-600 uppercase">
