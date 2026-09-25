@@ -13,6 +13,15 @@ interface Challenge {
   tiers?: string[];
 }
 
+interface HistoricalChallenge {
+  challengeId: number;
+  title: string;
+  description: string;
+  points: number;
+  chosenTier: string;
+  completedAt: string;
+}
+
 interface LogEntry {
   id: number;
   amount: number;
@@ -38,6 +47,9 @@ function Profile() {
   const [tierMessage, setTierMessage] = useState<string>("");
   const [tierLoading, setTierLoading] = useState<boolean>(false);
   const [totalPoints, setTotalPoints] = useState<number>(0);
+  const [historicalChallenges, setHistoricalChallenges] = useState<
+    HistoricalChallenge[]
+  >([]);
   const [loadingChallenge, setLoadingChallenge] = useState<boolean>(true);
 
   // States för daglig loggning
@@ -46,7 +58,7 @@ function Profile() {
   const [totalLoggedAmount, setTotalLoggedAmount] = useState<number>(0);
   const [dailyLogs, setDailyLogs] = useState<LogEntry[]>([]);
 
-  // NYTT: States för att redigera en rad live i listan
+  // States för att redigera en rad live i listan
   const [editingLogId, setEditingLogId] = useState<number | null>(null);
   const [editingAmount, setEditingAmount] = useState<string>("");
   const [editingCalendarDate, setEditingCalendarDate] = useState<string | null>(
@@ -54,6 +66,10 @@ function Profile() {
   );
   const [editingCalendarAmount, setEditingCalendarAmount] =
     useState<string>("");
+  const [showCancelDialog, setShowCancelDialog] = useState<boolean>(false);
+  const [cancelPhrase, setCancelPhrase] = useState<string>("");
+  const [cancelLoading, setCancelLoading] = useState<boolean>(false);
+  const [cancelMessage, setCancelMessage] = useState<string>("");
 
   const fetchChallengeLogs = async (userId: string, challengeId: number) => {
     const { data: logs } = await supabase
@@ -118,7 +134,9 @@ function Profile() {
 
       const { data: allUserChallenges } = await supabase
         .from("user_challenges")
-        .select("challenges(points)")
+        .select(
+          "id, chosen_tier, completed_at, challenges(id, title, description, points)",
+        )
         .eq("user_id", user.id);
       if (allUserChallenges) {
         const points = allUserChallenges.reduce(
@@ -126,6 +144,33 @@ function Profile() {
           0,
         );
         setTotalPoints(points);
+
+        const previousChallenges = allUserChallenges.flatMap((item: any) => {
+          const challenge = Array.isArray(item.challenges)
+            ? item.challenges[0]
+            : item.challenges;
+
+          if (!challenge || challenge.id === activeChallenge?.id) return [];
+
+          return [
+            {
+              challengeId: challenge.id,
+              title: challenge.title,
+              description: challenge.description,
+              points: challenge.points,
+              chosenTier: item.chosen_tier || "Ej vald",
+              completedAt: item.completed_at,
+            },
+          ];
+        });
+
+        setHistoricalChallenges(
+          previousChallenges.sort(
+            (a: HistoricalChallenge, b: HistoricalChallenge) =>
+              new Date(b.completedAt).getTime() -
+              new Date(a.completedAt).getTime(),
+          ),
+        );
       }
       setLoadingChallenge(false);
     }
@@ -177,6 +222,50 @@ function Profile() {
       setIsCurrentCompleted(true);
       setSavedTier(chosenTier);
     }
+  };
+
+  const handleCancelChallenge = async () => {
+    if (cancelPhrase !== "Jag skäms" || !currentChallenge) return;
+
+    setCancelLoading(true);
+    setCancelMessage("");
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { error: logsError } = await supabase
+      .from("challenge_logs")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("challenge_id", currentChallenge.id);
+
+    if (logsError) {
+      setCancelMessage(`Fel: ${logsError.message}`);
+      setCancelLoading(false);
+      return;
+    }
+
+    const { error: challengeError } = await supabase
+      .from("user_challenges")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("challenge_id", currentChallenge.id);
+
+    if (challengeError) {
+      setCancelMessage(`Fel: ${challengeError.message}`);
+    } else {
+      setIsCurrentCompleted(false);
+      setChosenTier("");
+      setSavedTier("");
+      setDailyLogs([]);
+      setTotalLoggedAmount(0);
+      setTotalPoints((points) => Math.max(0, points - currentChallenge.points));
+      setCancelPhrase("");
+      setShowCancelDialog(false);
+    }
+    setCancelLoading(false);
   };
 
   const handleChangeTier = async () => {
@@ -464,7 +553,7 @@ function Profile() {
                 )}
 
                 {challengeDates.length > 0 && (
-                  <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                  <div className="hidden space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <span className="text-xs font-bold uppercase tracking-wider text-slate-600">
                         Challengekalender
@@ -539,10 +628,10 @@ function Profile() {
                             disabled={isFuture}
                             onClick={() => {
                               setLogDate(date);
-                              if (loggedAmount > 0) {
-                                setEditingCalendarDate(date);
-                                setEditingCalendarAmount(String(loggedAmount));
-                              }
+                              setEditingCalendarDate(date);
+                              setEditingCalendarAmount(
+                                loggedAmount > 0 ? String(loggedAmount) : "",
+                              );
                             }}
                             className={`min-h-14 rounded-lg border p-1 text-left transition-colors ${
                               loggedAmount > 0
@@ -553,7 +642,7 @@ function Profile() {
                                     ? "border-slate-100 bg-white text-slate-300"
                                     : "border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:bg-blue-50"
                             } disabled:cursor-not-allowed`}
-                            title={`${date}${loggedAmount > 0 ? `: ${loggedAmount} reps` : ""}`}
+                            title={`${date}${loggedAmount > 0 ? `: ${loggedAmount} reps` : ": lägg till reps"}`}
                           >
                             <span className="block text-xs font-bold">
                               {dayNumber}
@@ -756,11 +845,234 @@ function Profile() {
                     </div>
                   </div>
                 )}
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCancelMessage("");
+                    setCancelPhrase("");
+                    setShowCancelDialog(true);
+                  }}
+                  className="w-full border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 font-semibold py-2 rounded-xl text-sm transition-colors"
+                >
+                  Avbryt challenge
+                </button>
+              </div>
+            )}
+
+            {challengeDates.length > 0 && (
+              <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-600">
+                    Challengekalender
+                  </span>
+                  <span className="text-[11px] text-slate-500">
+                    Klicka på en dag för att logga aktivitet
+                  </span>
+                </div>
+                <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                  {["Sön", "Mån", "Tis", "Ons", "Tor", "Fre", "Lör"].map(
+                    (day) => (
+                      <span key={day}>{day}</span>
+                    ),
+                  )}
+                </div>
+                <div className="grid grid-cols-7 gap-1">
+                  {calendarCells.map((date, index) => {
+                    if (!date) {
+                      return (
+                        <div key={`empty-${index}`} className="min-h-14" />
+                      );
+                    }
+
+                    const loggedAmount = loggedAmountByDate.get(date) || 0;
+                    const isToday = date === todayDate;
+                    const isFuture = date > todayDate;
+                    const dayNumber = Number(date.slice(8, 10));
+
+                    if (editingCalendarDate === date) {
+                      return (
+                        <div
+                          key={date}
+                          className="min-h-14 rounded-lg border border-blue-300 bg-blue-50 p-1"
+                        >
+                          <span className="block text-xs font-bold text-blue-900">
+                            {dayNumber}
+                          </span>
+                          <input
+                            type="number"
+                            min="0"
+                            value={editingCalendarAmount}
+                            onChange={(event) =>
+                              setEditingCalendarAmount(event.target.value)
+                            }
+                            className="w-full rounded border border-blue-200 px-1 py-0.5 text-[10px] text-slate-900"
+                            autoFocus
+                          />
+                          <div className="mt-1 flex gap-1">
+                            <button
+                              type="button"
+                              onClick={handleUpdateCalendarLog}
+                              className="flex-1 rounded bg-emerald-600 px-1 py-0.5 text-[10px] font-bold text-white"
+                            >
+                              Spara
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditingCalendarDate(null)}
+                              className="rounded bg-white px-1 py-0.5 text-[10px] font-bold text-slate-500"
+                            >
+                              X
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <button
+                        key={date}
+                        type="button"
+                        disabled={isFuture}
+                        onClick={() => {
+                          setLogDate(date);
+                          setEditingCalendarDate(date);
+                          setEditingCalendarAmount(
+                            loggedAmount > 0 ? String(loggedAmount) : "",
+                          );
+                        }}
+                        className={`min-h-14 rounded-lg border p-1 text-left transition-colors ${
+                          loggedAmount > 0
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+                            : isToday
+                              ? "border-blue-300 bg-blue-50 text-blue-900"
+                              : isFuture
+                                ? "border-slate-100 bg-white text-slate-300"
+                                : "border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:bg-blue-50"
+                        } disabled:cursor-not-allowed`}
+                        title={`${date}${loggedAmount > 0 ? `: ${loggedAmount} reps` : ": lägg till reps"}`}
+                      >
+                        <span className="block text-xs font-bold">
+                          {dayNumber}
+                        </span>
+                        {loggedAmount > 0 && (
+                          <span className="block truncate text-[10px] font-semibold">
+                            {loggedAmount} reps
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="flex flex-wrap gap-3 text-[11px] text-slate-500">
+                  <span className="flex items-center gap-1">
+                    <span className="h-2.5 w-2.5 rounded-sm bg-emerald-200" />
+                    Loggad
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="h-2.5 w-2.5 rounded-sm bg-blue-200" />
+                    Idag
+                  </span>
+                </div>
               </div>
             )}
           </div>
         )}
       </div>
+
+      {showCancelDialog && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/50 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl space-y-5">
+            <div>
+              <h3 className="text-lg font-bold text-slate-900">
+                Avbryt challenge?
+              </h3>
+              <p className="mt-2 text-sm text-slate-600">
+                Ditt deltagande och alla loggade reps för challengen tas bort.
+                Detta går inte att ångra.
+              </p>
+            </div>
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                Skriv &quot;Jag skäms&quot; för att bekräfta
+              </label>
+              <input
+                type="text"
+                value={cancelPhrase}
+                onChange={(event) => setCancelPhrase(event.target.value)}
+                autoFocus
+                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-100"
+              />
+            </div>
+            {cancelMessage && (
+              <p className="text-xs font-medium text-rose-600">
+                {cancelMessage}
+              </p>
+            )}
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setShowCancelDialog(false)}
+                className="flex-1 rounded-xl border border-slate-200 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+              >
+                Behåll challenge
+              </button>
+              <button
+                type="button"
+                onClick={handleCancelChallenge}
+                disabled={cancelLoading || cancelPhrase !== "Jag skäms"}
+                className="flex-1 rounded-xl bg-rose-600 py-2 text-sm font-semibold text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {cancelLoading ? "Avbryter..." : "Avbryt challenge"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {historicalChallenges.length > 0 && (
+        <section className="space-y-4 border-t border-slate-100 pt-6">
+          <div>
+            <h3 className="text-lg font-bold text-slate-900 tracking-tight">
+              Tidigare challenges
+            </h3>
+            <p className="text-xs text-slate-500 mt-1">
+              Dina tidigare deltaganden, endast för visning.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            {historicalChallenges.map((challenge) => (
+              <article
+                key={challenge.challengeId}
+                className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h4 className="font-bold text-slate-900">
+                      {challenge.title}
+                    </h4>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Avklarad{" "}
+                      {new Date(challenge.completedAt).toLocaleDateString(
+                        "sv-SE",
+                      )}
+                    </p>
+                  </div>
+                  <span className="shrink-0 text-xs px-2 py-1 rounded-full bg-amber-100 text-amber-800 font-bold">
+                    +{challenge.points} XP
+                  </span>
+                </div>
+                <p className="text-sm text-slate-600">
+                  {challenge.description}
+                </p>
+                <p className="text-xs font-semibold text-slate-700">
+                  Vald nivå: {challenge.chosenTier}
+                </p>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Profilinställningar */}
       <div className="space-y-4 border-t border-slate-100 pt-6">
