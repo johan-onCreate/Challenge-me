@@ -1,6 +1,10 @@
 import { useState, FormEvent, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { calculateProgressPercent, canChangeTier } from "./profileUtils";
+import {
+  calculateEarnedPoints,
+  calculateProgressPercent,
+  canChangeTier,
+} from "./profileUtils";
 
 interface Challenge {
   id: number;
@@ -20,6 +24,10 @@ interface HistoricalChallenge {
   points: number;
   chosenTier: string;
   completedAt: string;
+  totalAmount: number;
+  earnedPoints: number;
+  placement: number | null;
+  participantCount: number;
 }
 
 interface LogEntry {
@@ -43,7 +51,6 @@ function Profile() {
   );
   const [isCurrentCompleted, setIsCurrentCompleted] = useState<boolean>(false);
   const [chosenTier, setChosenTier] = useState<string>("");
-  const [savedTier, setSavedTier] = useState<string>("");
   const [tierMessage, setTierMessage] = useState<string>("");
   const [tierLoading, setTierLoading] = useState<boolean>(false);
   const [totalPoints, setTotalPoints] = useState<number>(0);
@@ -138,6 +145,47 @@ function Profile() {
           "id, chosen_tier, completed_at, challenges(id, title, description, points)",
         )
         .eq("user_id", user.id);
+      const { data: userChallengeLogs } = await supabase
+        .from("challenge_logs")
+        .select("challenge_id, amount")
+        .eq("user_id", user.id);
+      const totalsByChallenge = new Map<number, number>();
+      userChallengeLogs?.forEach((log) => {
+        totalsByChallenge.set(
+          log.challenge_id,
+          (totalsByChallenge.get(log.challenge_id) || 0) + log.amount,
+        );
+      });
+      const { data: allParticipants } = await supabase
+        .from("user_challenges")
+        .select("user_id, challenge_id, chosen_tier");
+      const { data: allChallengeLogs } = await supabase
+        .from("challenge_logs")
+        .select("user_id, challenge_id, amount");
+      const totalsByParticipant = new Map<string, number>();
+      allChallengeLogs?.forEach((log) => {
+        const key = `${log.challenge_id}:${log.user_id}`;
+        totalsByParticipant.set(
+          key,
+          (totalsByParticipant.get(key) || 0) + log.amount,
+        );
+      });
+      const participantsByGroup = new Map<
+        string,
+        Array<{ userId: string; totalAmount: number }>
+      >();
+      allParticipants?.forEach((participant) => {
+        const groupKey = `${participant.challenge_id}:${participant.chosen_tier || "Ej vald"}`;
+        const participants = participantsByGroup.get(groupKey) || [];
+        participants.push({
+          userId: participant.user_id,
+          totalAmount:
+            totalsByParticipant.get(
+              `${participant.challenge_id}:${participant.user_id}`,
+            ) || 0,
+        });
+        participantsByGroup.set(groupKey, participants);
+      });
       if (allUserChallenges) {
         const points = allUserChallenges.reduce(
           (sum: number, item: any) => sum + (item.challenges?.points || 0),
@@ -152,6 +200,14 @@ function Profile() {
 
           if (!challenge || challenge.id === activeChallenge?.id) return [];
 
+          const groupKey = `${challenge.id}:${item.chosen_tier || "Ej vald"}`;
+          const rankedParticipants = (
+            participantsByGroup.get(groupKey) || []
+          ).sort((a, b) => b.totalAmount - a.totalAmount);
+          const currentPlacement = rankedParticipants.findIndex(
+            (participant) => participant.userId === user.id,
+          );
+
           return [
             {
               challengeId: challenge.id,
@@ -160,6 +216,14 @@ function Profile() {
               points: challenge.points,
               chosenTier: item.chosen_tier || "Ej vald",
               completedAt: item.completed_at,
+              totalAmount: totalsByChallenge.get(challenge.id) || 0,
+              earnedPoints: calculateEarnedPoints(
+                totalsByChallenge.get(challenge.id) || 0,
+                item.chosen_tier || "",
+                challenge.points,
+              ),
+              placement: currentPlacement >= 0 ? currentPlacement + 1 : null,
+              participantCount: rankedParticipants.length,
             },
           ];
         });
@@ -262,7 +326,17 @@ function Profile() {
       setSavedTier("");
       setDailyLogs([]);
       setTotalLoggedAmount(0);
-      setTotalPoints((points) => Math.max(0, points - currentChallenge.points));
+      setTotalPoints((points) =>
+        Math.max(
+          0,
+          points -
+            calculateEarnedPoints(
+              totalLoggedAmount,
+              savedTier,
+              currentChallenge.points,
+            ),
+        ),
+      );
       setCancelPhrase("");
       setShowCancelDialog(false);
     }
@@ -500,7 +574,13 @@ function Profile() {
                   {currentChallenge.title}
                 </h4>
                 <span className="text-xs px-2.5 py-0.5 font-bold rounded-full bg-amber-100 text-amber-800">
-                  +{currentChallenge.points} XP
+                  +
+                  {calculateEarnedPoints(
+                    totalLoggedAmount,
+                    savedTier,
+                    currentChallenge.points,
+                  )}{" "}
+                  / {currentChallenge.points} XP
                 </span>
               </div>
               <p className="text-sm text-slate-600 mt-1">
@@ -1071,8 +1151,15 @@ function Profile() {
                     </p>
                   </div>
                   <span className="shrink-0 text-xs px-2 py-1 rounded-full bg-amber-100 text-amber-800 font-bold">
-                    +{challenge.points} XP
+                    +{challenge.earnedPoints} / {challenge.points} XP
                   </span>
+                  {challenge.placement && challenge.placement <= 3 && (
+                    <span className="shrink-0 text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 font-bold">
+                      {["🥇", "🥈", "🥉"][challenge.placement - 1]}{" "}
+                      {challenge.placement}:a plats av{" "}
+                      {challenge.participantCount}
+                    </span>
+                  )}
                 </div>
                 <p className="text-sm text-slate-600">
                   {challenge.description}
@@ -1080,6 +1167,24 @@ function Profile() {
                 <p className="text-xs font-semibold text-slate-700">
                   Vald nivå: {challenge.chosenTier}
                 </p>
+                <div className="flex items-center justify-between gap-3 border-t border-slate-200 pt-3">
+                  <span className="text-sm font-bold text-slate-900">
+                    Resultat: {challenge.totalAmount} / {challenge.chosenTier}
+                  </span>
+                  <span className="text-xs font-bold text-emerald-700">
+                    {calculateProgressPercent(
+                      challenge.totalAmount,
+                      challenge.chosenTier,
+                    )}
+                    %
+                  </span>
+                  {challenge.placement && challenge.placement > 3 && (
+                    <p className="text-xs text-slate-500">
+                      Plats {challenge.placement} av{" "}
+                      {challenge.participantCount}
+                    </p>
+                  )}
+                </div>
               </article>
             ))}
           </div>

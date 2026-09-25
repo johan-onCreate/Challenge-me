@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { calculateProgressPercent, canChangeTier } from "./profileUtils";
+import {
+  calculateEarnedPoints,
+  calculateProgressPercent,
+  canChangeTier,
+} from "./profileUtils";
 
 describe("calculateProgressPercent", () => {
   it("calculates progress for the selected level", () => {
@@ -29,5 +33,19 @@ describe("canChangeTier", () => {
 
   it("does not allow a level outside the challenge options", () => {
     expect(canChangeTier("500 reps", "100 reps", availableTiers)).toBe(false);
+  });
+});
+
+describe("calculateEarnedPoints", () => {
+  it("awards points proportionally to progress", () => {
+    expect(calculateEarnedPoints(250, "1000 squats", 100)).toBe(25);
+  });
+
+  it("does not award more than the challenge maximum", () => {
+    expect(calculateEarnedPoints(1200, "1000 squats", 100)).toBe(100);
+  });
+
+  it("awards zero points without a valid target", () => {
+    expect(calculateEarnedPoints(250, "Ej vald", 100)).toBe(0);
   });
 });
