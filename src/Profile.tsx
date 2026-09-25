@@ -49,6 +49,11 @@ function Profile() {
   // NYTT: States för att redigera en rad live i listan
   const [editingLogId, setEditingLogId] = useState<number | null>(null);
   const [editingAmount, setEditingAmount] = useState<string>("");
+  const [editingCalendarDate, setEditingCalendarDate] = useState<string | null>(
+    null,
+  );
+  const [editingCalendarAmount, setEditingCalendarAmount] =
+    useState<string>("");
 
   const fetchChallengeLogs = async (userId: string, challengeId: number) => {
     const { data: logs } = await supabase
@@ -268,6 +273,42 @@ function Profile() {
     }
   };
 
+  const handleUpdateCalendarLog = async () => {
+    if (!editingCalendarDate || !currentChallenge) return;
+
+    const amountNum = parseInt(editingCalendarAmount, 10);
+    if (isNaN(amountNum) || amountNum < 0) return;
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const existingLog = dailyLogs.find(
+      (log) => log.logged_at === editingCalendarDate,
+    );
+    const query = existingLog
+      ? amountNum === 0
+        ? supabase.from("challenge_logs").delete().eq("id", existingLog.id)
+        : supabase
+            .from("challenge_logs")
+            .update({ amount: amountNum })
+            .eq("id", existingLog.id)
+      : supabase.from("challenge_logs").insert({
+          user_id: user.id,
+          challenge_id: currentChallenge.id,
+          amount: amountNum,
+          logged_at: editingCalendarDate,
+        });
+
+    const { error } = await query;
+    if (!error) {
+      setEditingCalendarDate(null);
+      setEditingCalendarAmount("");
+      fetchChallengeLogs(user.id, currentChallenge.id);
+    }
+  };
+
   // NYTT: Radera en historisk logg helt
   const handleDeleteLog = async (logId: number) => {
     if (!window.confirm("Vill du ta bort denna loggning permanent?")) return;
@@ -302,6 +343,28 @@ function Profile() {
     isCurrentCompleted &&
     savedTier !== "" &&
     !availableTiers.includes(savedTier);
+  const loggedAmountByDate = new Map(
+    dailyLogs.map((log) => [log.logged_at, log.amount]),
+  );
+  const toLocalDateKey = (date: Date) =>
+    `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+  const challengeDates: string[] = [];
+  if (minDate && maxDate) {
+    const dateCursor = new Date(`${minDate}T00:00:00`);
+    const lastDate = new Date(`${maxDate}T00:00:00`);
+    while (dateCursor <= lastDate) {
+      challengeDates.push(toLocalDateKey(dateCursor));
+      dateCursor.setDate(dateCursor.getDate() + 1);
+    }
+  }
+  const calendarStartOffset = minDate
+    ? new Date(`${minDate}T00:00:00`).getDay()
+    : 0;
+  const calendarCells: Array<string | null> = [
+    ...Array.from({ length: calendarStartOffset }, () => null),
+    ...challengeDates,
+  ];
+  const todayDate = toLocalDateKey(new Date());
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -397,6 +460,123 @@ function Profile() {
                         ? "Välj en ny nivå nedan för att fortsätta logga progress."
                         : "Admin måste lägga till en ny nivå innan du kan fortsätta."}
                     </p>
+                  </div>
+                )}
+
+                {challengeDates.length > 0 && (
+                  <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-xs font-bold uppercase tracking-wider text-slate-600">
+                        Challengekalender
+                      </span>
+                      <span className="text-[11px] text-slate-500">
+                        Klicka på en dag för att logga aktivitet
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                      {["Sön", "Mån", "Tis", "Ons", "Tor", "Fre", "Lör"].map(
+                        (day) => (
+                          <span key={day}>{day}</span>
+                        ),
+                      )}
+                    </div>
+                    <div className="grid grid-cols-7 gap-1">
+                      {calendarCells.map((date, index) => {
+                        if (!date) {
+                          return (
+                            <div key={`empty-${index}`} className="min-h-14" />
+                          );
+                        }
+
+                        const loggedAmount = loggedAmountByDate.get(date) || 0;
+                        const isToday = date === todayDate;
+                        const isFuture = date > todayDate;
+                        const dayNumber = Number(date.slice(8, 10));
+
+                        if (editingCalendarDate === date) {
+                          return (
+                            <div
+                              key={date}
+                              className="min-h-14 rounded-lg border border-blue-300 bg-blue-50 p-1"
+                            >
+                              <span className="block text-xs font-bold text-blue-900">
+                                {dayNumber}
+                              </span>
+                              <input
+                                type="number"
+                                min="0"
+                                value={editingCalendarAmount}
+                                onChange={(event) =>
+                                  setEditingCalendarAmount(event.target.value)
+                                }
+                                className="w-full rounded border border-blue-200 px-1 py-0.5 text-[10px] text-slate-900"
+                                autoFocus
+                              />
+                              <div className="mt-1 flex gap-1">
+                                <button
+                                  type="button"
+                                  onClick={handleUpdateCalendarLog}
+                                  className="flex-1 rounded bg-emerald-600 px-1 py-0.5 text-[10px] font-bold text-white"
+                                >
+                                  Spara
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingCalendarDate(null)}
+                                  className="rounded bg-white px-1 py-0.5 text-[10px] font-bold text-slate-500"
+                                >
+                                  X
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <button
+                            key={date}
+                            type="button"
+                            disabled={isFuture}
+                            onClick={() => {
+                              setLogDate(date);
+                              if (loggedAmount > 0) {
+                                setEditingCalendarDate(date);
+                                setEditingCalendarAmount(String(loggedAmount));
+                              }
+                            }}
+                            className={`min-h-14 rounded-lg border p-1 text-left transition-colors ${
+                              loggedAmount > 0
+                                ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+                                : isToday
+                                  ? "border-blue-300 bg-blue-50 text-blue-900"
+                                  : isFuture
+                                    ? "border-slate-100 bg-white text-slate-300"
+                                    : "border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:bg-blue-50"
+                            } disabled:cursor-not-allowed`}
+                            title={`${date}${loggedAmount > 0 ? `: ${loggedAmount} reps` : ""}`}
+                          >
+                            <span className="block text-xs font-bold">
+                              {dayNumber}
+                            </span>
+                            {loggedAmount > 0 && (
+                              <span className="block truncate text-[10px] font-semibold">
+                                {loggedAmount} reps
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="flex flex-wrap gap-3 text-[11px] text-slate-500">
+                      <span className="flex items-center gap-1">
+                        <span className="h-2.5 w-2.5 rounded-sm bg-emerald-200" />
+                        Loggad
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span className="h-2.5 w-2.5 rounded-sm bg-blue-200" />
+                        Idag
+                      </span>
+                    </div>
                   </div>
                 )}
 
