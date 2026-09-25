@@ -6,6 +6,9 @@ interface Challenge {
   title: string;
   description: string;
   points: number;
+  is_active: boolean;
+  start_date: string;
+  end_date: string;
   tiers?: string[];
 }
 
@@ -32,12 +35,13 @@ function Profile() {
   const [totalPoints, setTotalPoints] = useState<number>(0);
   const [loadingChallenge, setLoadingChallenge] = useState<boolean>(true);
 
-  // NYTT: States för daglig loggning
+  // States för daglig loggning & Kalender
   const [logAmount, setLogAmount] = useState<string>('');
+  const [logDate, setLogDate] = useState<string>(''); // Sparar valt datum från kalendern
   const [totalLoggedAmount, setTotalLoggedAmount] = useState<number>(0);
   const [dailyLogs, setDailyLogs] = useState<LogEntry[]>([]);
 
-  // Funktion för att hämta loggar separat så vi kan uppdatera den live
+  // Hämta logg-historik
   const fetchChallengeLogs = async (userId: string, challengeId: number) => {
     const { data: logs } = await supabase
       .from('challenge_logs')
@@ -76,6 +80,9 @@ function Profile() {
       if (activeChallenge) {
         setCurrentChallenge(activeChallenge);
 
+        // Sätt kalenderns standarddatum till IDAG, men formaterat som YYYY-MM-DD
+        setLogDate(new Date().toISOString().split('T')[0]);
+
         const { data: completedCheck } = await supabase
           .from('user_challenges')
           .select('id, chosen_tier')
@@ -86,7 +93,6 @@ function Profile() {
         if (completedCheck) {
           setIsCurrentCompleted(true);
           setSavedTier(completedCheck.chosen_tier || '');
-          // Hämta loggar om utmaningen är startad/antagen
           fetchChallengeLogs(user.id, activeChallenge.id);
         }
       }
@@ -112,7 +118,6 @@ function Profile() {
     setProfileLoading(false);
   };
 
-  // Välj nivå och påbörja utmaningen
   const handleStartChallenge = async () => {
     if (!currentChallenge) return;
     if (currentChallenge.tiers && currentChallenge.tiers.length > 0 && !chosenTier) {
@@ -132,11 +137,10 @@ function Profile() {
     }
   };
 
-  // Logga dagens reps/mängd
   const handleLogDailyProgress = async (e: FormEvent) => {
     e.preventDefault();
     const amountNum = parseInt(logAmount);
-    if (isNaN(amountNum) || amountNum <= 0) return;
+    if (isNaN(amountNum) || amountNum <= 0 || !logDate) return;
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user || !currentChallenge) return;
@@ -146,19 +150,23 @@ function Profile() {
       .insert([{ 
         user_id: user.id, 
         challenge_id: currentChallenge.id, 
-        amount: amountNum 
+        amount: amountNum,
+        logged_at: logDate // Sparar det valda datumet från kalendern
       }]);
 
     if (error) {
       alert(error.message);
     } else {
       setLogAmount('');
-      fetchChallengeLogs(user.id, currentChallenge.id); // Ladda om statistiken direkt på skärmen
+      fetchChallengeLogs(user.id, currentChallenge.id);
     }
   };
-  // Räkna ut målet i siffror (t.ex. "3000 squats" -> 3000)
   const targetNumber = parseInt(savedTier) || 0;
   const progressPercent = targetNumber > 0 ? Math.min(Math.round((totalLoggedAmount / targetNumber) * 100), 100) : 0;
+
+  // Formatera start- och slutdatum för HTML5 kalendern (kräver YYYY-MM-DD)
+  const minDate = currentChallenge?.start_date ? currentChallenge.start_date.split('T')[0] : '';
+  const maxDate = currentChallenge?.end_date ? currentChallenge.end_date.split('T')[0] : '';
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -188,7 +196,7 @@ function Profile() {
               <p className="text-sm text-slate-600 mt-1">{currentChallenge.description}</p>
             </div>
 
-            {/* OM INTE STARTAD: Välj nivå */}
+            {/* VÄLJ NIVÅ */}
             {!isCurrentCompleted && currentChallenge.tiers && currentChallenge.tiers.length > 0 && (
               <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-3">
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">Välj din målsättning:</label>
@@ -206,7 +214,7 @@ function Profile() {
               </div>
             )}
 
-            {/* OM ANTAGEN/STARTAD: Visa Framstegsmätare och Loggnings-formulär */}
+            {/* PROGRESS MÄTARE & KALENDERINMATNING */}
             {isCurrentCompleted && (
               <div className="space-y-5 border-t border-slate-100 pt-4">
                 
@@ -221,29 +229,42 @@ function Profile() {
                   </div>
                 </div>
 
-                {/* Loggningsformulär */}
-                <form onSubmit={handleLogDailyProgress} className="flex gap-2">
-                  <input 
-                    type="number" 
-                    value={logAmount} 
-                    onChange={(e) => setLogAmount(e.target.value)} 
-                    placeholder="Hur många gjorde du idag?" 
-                    required 
-                    className="flex-1 px-3 py-2 border border-slate-200 rounded-xl text-sm outline-none focus:border-blue-600"
-                  />
-                  <button type="submit" className="bg-slate-900 hover:bg-slate-800 text-white font-semibold px-4 py-2 rounded-xl text-sm transition-colors">
-                    Logga reps
-                  </button>
+                {/* Tidsstyrd Loggning med Kalender */}
+                <form onSubmit={handleLogDailyProgress} className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                  <span className="block text-xs font-bold uppercase tracking-wider text-slate-600">Logga aktivitet</span>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    {/* Kalenderväljare, begränsad av utmaningens start- och slutdatum */}
+                    <input 
+                      type="date"
+                      value={logDate}
+                      min={minDate}
+                      max={maxDate}
+                      onChange={(e) => setLogDate(e.target.value)}
+                      required
+                      className="px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white outline-none focus:border-blue-600 text-slate-700 font-medium"
+                    />
+                    <input 
+                      type="number" 
+                      value={logAmount} 
+                      onChange={(e) => setLogAmount(e.target.value)} 
+                      placeholder="Antal (t.ex. 50)" 
+                      required 
+                      className="flex-1 px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white outline-none focus:border-blue-600"
+                    />
+                    <button type="submit" className="bg-slate-900 hover:bg-slate-800 text-white font-semibold px-4 py-2 rounded-xl text-sm transition-colors">
+                      Logga
+                    </button>
+                  </div>
                 </form>
 
-                {/* Historik / Senaste loggar */}
+                {/* Loggar och historik */}
                 {dailyLogs.length > 0 && (
                   <div className="space-y-1.5 pt-2">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500">Dina senaste loggar</label>
-                    <div className="max-h-28 overflow-y-auto space-y-1 border border-slate-100 rounded-lg p-2 bg-slate-50/50">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500">Dina registrerade loggar</label>
+                    <div className="max-h-28 overflow-y-auto space-y-1 border border-slate-100 rounded-lg p-2 bg-white shadow-inner">
                       {dailyLogs.map((log) => (
                         <div key={log.id} className="flex justify-between text-xs text-slate-600 border-b border-slate-100/60 pb-1 last:border-0 last:pb-0">
-                          <span>📅 {log.logged_at}</span>
+                          <span className="font-medium">🗓️ {log.logged_at}</span>
                           <span className="font-bold text-slate-800">+{log.amount} reps</span>
                         </div>
                       ))}
