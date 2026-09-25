@@ -1014,6 +1014,13 @@ function Profile() {
                     const isToday = date === todayDate;
                     const isFuture = date > todayDate;
                     const dayNumber = Number(date.slice(8, 10));
+                    const isFirstOfMonth = date.slice(8, 10) === "01";
+                    const monthLabel = isFirstOfMonth
+                      ? new Date(`${date}T00:00:00`).toLocaleDateString(
+                          "sv-SE",
+                          { month: "short" },
+                        )
+                      : "";
 
                     if (editingCalendarDate === date) {
                       return (
@@ -1021,6 +1028,11 @@ function Profile() {
                           key={date}
                           className="min-h-14 rounded-lg border border-blue-300 bg-blue-50 p-1"
                         >
+                          {monthLabel && (
+                            <span className="block truncate text-[9px] font-bold capitalize text-blue-700">
+                              {monthLabel}
+                            </span>
+                          )}
                           <span className="block text-xs font-bold text-blue-900">
                             {dayNumber}
                           </span>
@@ -1077,6 +1089,11 @@ function Profile() {
                         } disabled:cursor-not-allowed`}
                         title={`${date}${loggedAmount > 0 ? `: ${loggedAmount} reps` : ": lägg till reps"}`}
                       >
+                        {monthLabel && (
+                          <span className="block truncate text-[9px] font-bold capitalize text-slate-500">
+                            {monthLabel}
+                          </span>
+                        )}
                         <span className="block text-xs font-bold">
                           {dayNumber}
                         </span>
