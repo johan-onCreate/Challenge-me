@@ -297,6 +297,11 @@ function Profile() {
   const maxDate = currentChallenge?.end_date
     ? currentChallenge.end_date.split("T")[0]
     : "";
+  const availableTiers = currentChallenge?.tiers || [];
+  const savedTierUnavailable =
+    isCurrentCompleted &&
+    savedTier !== "" &&
+    !availableTiers.includes(savedTier);
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -380,6 +385,21 @@ function Profile() {
             {/* PROGRESS MÄTARE & LOGGNING */}
             {isCurrentCompleted && (
               <div className="space-y-5 border-t border-slate-100 pt-4">
+                {savedTierUnavailable && (
+                  <div className="p-4 rounded-xl border border-amber-200 bg-amber-50 text-amber-900 space-y-1">
+                    <p className="text-sm font-bold">
+                      Din valda nivå har tagits bort
+                    </p>
+                    <p className="text-xs">
+                      Nivån <strong>{savedTier}</strong> finns inte längre i den
+                      här utmaningen.{" "}
+                      {availableTiers.length > 0
+                        ? "Välj en ny nivå nedan för att fortsätta logga progress."
+                        : "Admin måste lägga till en ny nivå innan du kan fortsätta."}
+                    </p>
+                  </div>
+                )}
+
                 {currentChallenge.tiers &&
                   currentChallenge.tiers.length > 0 && (
                     <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-3">
