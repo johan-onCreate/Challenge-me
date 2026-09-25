@@ -37,13 +37,16 @@ function Profile() {
   const [totalPoints, setTotalPoints] = useState<number>(0);
   const [loadingChallenge, setLoadingChallenge] = useState<boolean>(true);
 
-  // States för daglig loggning & Kalender
+  // States för daglig loggning
   const [logAmount, setLogAmount] = useState<string>("");
-  const [logDate, setLogDate] = useState<string>(""); // Sparar valt datum från kalendern
+  const [logDate, setLogDate] = useState<string>("");
   const [totalLoggedAmount, setTotalLoggedAmount] = useState<number>(0);
   const [dailyLogs, setDailyLogs] = useState<LogEntry[]>([]);
 
-  // Hämta logg-historik
+  // NYTT: States för att redigera en rad live i listan
+  const [editingLogId, setEditingLogId] = useState<number | null>(null);
+  const [editingAmount, setEditingAmount] = useState<string>("");
+
   const fetchChallengeLogs = async (userId: string, challengeId: number) => {
     const { data: logs } = await supabase
       .from("challenge_logs")
@@ -87,8 +90,6 @@ function Profile() {
 
       if (activeChallenge) {
         setCurrentChallenge(activeChallenge);
-
-        // Sätt kalenderns standarddatum till IDAG, men formaterat som YYYY-MM-DD
         setLogDate(new Date().toISOString().split("T")[0]);
 
         const { data: completedCheck } = await supabase
@@ -182,19 +183,76 @@ function Profile() {
     } = await supabase.auth.getUser();
     if (!user || !currentChallenge) return;
 
-    const { error } = await supabase.from("challenge_logs").insert([
-      {
-        user_id: user.id,
-        challenge_id: currentChallenge.id,
-        amount: amountNum,
-        logged_at: logDate, // Sparar det valda datumet från kalendern
-      },
-    ]);
+    const { data: existingLog } = await supabase
+      .from("challenge_logs")
+      .select("amount")
+      .eq("user_id", user.id)
+      .eq("challenge_id", currentChallenge.id)
+      .eq("logged_at", logDate)
+      .maybeSingle();
 
-    if (error) {
-      alert(error.message);
-    } else {
+    const newAmount = existingLog ? existingLog.amount + amountNum : amountNum;
+
+    const { error } = await supabase
+      .from("challenge_logs")
+      .upsert(
+        {
+          user_id: user.id,
+          challenge_id: currentChallenge.id,
+          amount: newAmount,
+          logged_at: logDate,
+        },
+        { onConflict: "user_id,challenge_id,logged_at" },
+      );
+
+    if (!error) {
       setLogAmount("");
+      fetchChallengeLogs(user.id, currentChallenge.id);
+    }
+  };
+
+  // NYTT: Spara en ändrad historisk logg
+  const handleUpdateLog = async (logId: number, loggedAt: string) => {
+    const amountNum = parseInt(editingAmount);
+    if (isNaN(amountNum) || amountNum < 0) return;
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user || !currentChallenge) return;
+
+    // Om admin ändrar till 0, ta bort raden istället
+    if (amountNum === 0) {
+      handleDeleteLog(logId);
+      return;
+    }
+
+    const { error } = await supabase
+      .from("challenge_logs")
+      .update({ amount: amountNum })
+      .eq("id", logId);
+
+    if (!error) {
+      setEditingLogId(null);
+      fetchChallengeLogs(user.id, currentChallenge.id);
+    }
+  };
+
+  // NYTT: Radera en historisk logg helt
+  const handleDeleteLog = async (logId: number) => {
+    if (!window.confirm("Vill du ta bort denna loggning permanent?")) return;
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user || !currentChallenge) return;
+
+    const { error } = await supabase
+      .from("challenge_logs")
+      .delete()
+      .eq("id", logId);
+
+    if (!error) {
       fetchChallengeLogs(user.id, currentChallenge.id);
     }
   };
@@ -204,7 +262,6 @@ function Profile() {
       ? Math.min(Math.round((totalLoggedAmount / targetNumber) * 100), 100)
       : 0;
 
-  // Formatera start- och slutdatum för HTML5 kalendern (kräver YYYY-MM-DD)
   const minDate = currentChallenge?.start_date
     ? currentChallenge.start_date.split("T")[0]
     : "";
@@ -291,7 +348,7 @@ function Profile() {
                 </div>
               )}
 
-            {/* PROGRESS MÄTARE & KALENDERINMATNING */}
+            {/* PROGRESS MÄTARE & LOGGNING */}
             {isCurrentCompleted && (
               <div className="space-y-5 border-t border-slate-100 pt-4">
                 {/* Progress Bar */}
@@ -310,7 +367,7 @@ function Profile() {
                   </div>
                 </div>
 
-                {/* Tidsstyrd Loggning med Kalender */}
+                {/* Loggningsformulär */}
                 <form
                   onSubmit={handleLogDailyProgress}
                   className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100"
@@ -318,8 +375,6 @@ function Profile() {
                   <span className="block text-xs font-bold uppercase tracking-wider text-slate-600">
                     Logga aktivitet
                   </span>
-
-                  {/* Grid-layout: Staplas på mobil (1 kolumn), blir 3 kolumner på datorer */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <input
                       type="date"
@@ -328,43 +383,100 @@ function Profile() {
                       max={maxDate}
                       onChange={(e) => setLogDate(e.target.value)}
                       required
-                      className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-white outline-none focus:border-blue-600 text-slate-700 font-medium shadow-sm"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white"
                     />
                     <input
                       type="number"
                       value={logAmount}
                       onChange={(e) => setLogAmount(e.target.value)}
-                      placeholder="Antal (t.ex. 50)"
+                      placeholder="Antal reps"
                       required
-                      className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-white outline-none focus:border-blue-600 shadow-sm"
+                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white"
                     />
                     <button
                       type="submit"
-                      className="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-2.5 px-4 rounded-xl text-sm transition-colors shadow-sm cursor-pointer"
+                      className="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-2 rounded-xl text-sm transition-colors"
                     >
                       Logga reps
                     </button>
                   </div>
                 </form>
 
-                {/* Loggar och historik */}
+                {/* HISTORIK MED REDIGERINGSFUNKTIONER */}
                 {dailyLogs.length > 0 && (
-                  <div className="space-y-1.5 pt-2">
+                  <div className="space-y-2 pt-2">
                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-500">
                       Dina registrerade loggar
                     </label>
-                    <div className="max-h-28 overflow-y-auto space-y-1 border border-slate-100 rounded-lg p-2 bg-white shadow-inner">
+                    <div className="max-h-40 overflow-y-auto space-y-1.5 border border-slate-100 rounded-xl p-2 bg-slate-50/50">
                       {dailyLogs.map((log) => (
                         <div
                           key={log.id}
-                          className="flex justify-between text-xs text-slate-600 border-b border-slate-100/60 pb-1 last:border-0 last:pb-0"
+                          className="flex justify-between items-center text-xs text-slate-600 bg-white p-2 rounded-lg border border-slate-200/40 shadow-sm"
                         >
-                          <span className="font-medium">
-                            🗓️ {log.logged_at}
-                          </span>
-                          <span className="font-bold text-slate-800">
-                            +{log.amount} reps
-                          </span>
+                          {/* Om raden är i redigeringsläge, visa input, annars text */}
+                          {editingLogId === log.id ? (
+                            <div className="flex gap-2 items-center flex-1">
+                              <span className="font-semibold text-slate-500">
+                                📅 {log.logged_at}:
+                              </span>
+                              <input
+                                type="number"
+                                value={editingAmount}
+                                onChange={(e) =>
+                                  setEditingAmount(e.target.value)
+                                }
+                                className="w-20 px-2 py-1 border border-slate-300 rounded-md text-slate-900"
+                              />
+                              <button
+                                onClick={() =>
+                                  handleUpdateLog(log.id, log.logged_at)
+                                }
+                                className="bg-emerald-600 text-white px-2 py-1 rounded-md font-medium"
+                              >
+                                Spara
+                              </button>
+                              <button
+                                onClick={() => setEditingLogId(null)}
+                                className="text-slate-400 hover:text-slate-600"
+                              >
+                                Avbryt
+                              </button>
+                            </div>
+                          ) : (
+                            <>
+                              <span>
+                                📅{" "}
+                                <strong className="font-medium text-slate-700">
+                                  {log.logged_at}
+                                </strong>
+                              </span>
+                              <div className="flex items-center gap-3">
+                                <span className="font-bold text-slate-900">
+                                  {log.amount} reps
+                                </span>
+
+                                {/* Ändra-knapp */}
+                                <button
+                                  onClick={() => {
+                                    setEditingLogId(log.id);
+                                    setEditingAmount(String(log.amount));
+                                  }}
+                                  className="text-blue-500 hover:text-blue-700 font-medium"
+                                >
+                                  Ändra
+                                </button>
+
+                                {/* Radera-knapp */}
+                                <button
+                                  onClick={() => handleDeleteLog(log.id)}
+                                  className="text-rose-500 hover:text-rose-700 font-medium"
+                                >
+                                  Ta bort
+                                </button>
+                              </div>
+                            </>
+                          )}
                         </div>
                       ))}
                     </div>
