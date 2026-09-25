@@ -16,50 +16,62 @@ function Login() {
     setLoading(true);
     setMessage('');
 
-    // Anropa Supabase funktion för att logga in med lösenord
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
       setMessage(`Fel: ${error.message}`);
     } else {
       setMessage('Inloggning lyckades!');
     }
-    
     setLoading(false);
   };
 
   return (
-    <div style={{ maxWidth: '400px', margin: '20px auto', padding: '20px', border: '1px solid #ccc', borderRadius: '8px' }}>
-      <h2>Logga in</h2>
-      <form onSubmit={handleLogin}>
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ display: 'block', marginBottom: '5px' }}>E-post:</label>
+    <div className="space-y-5 animate-fade-in">
+      <div className="text-center sm:text-left">
+        <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Välkommen tillbaka</h2>
+        <p className="text-sm text-slate-500 mt-1">Logga in för att hantera din profil och data.</p>
+      </div>
+
+      <form onSubmit={handleLogin} className="space-y-4">
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">E-postadress</label>
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
+            className="w-full px-4 py-3 border border-slate-200 rounded-xl bg-slate-50 text-slate-900 text-sm font-medium transition-all outline-none focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+            placeholder="namn@domän.se"
           />
         </div>
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ display: 'block', marginBottom: '5px' }}>Lösenord:</label>
+
+        <div>
+          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">Lösenord</label>
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
+            className="w-full px-4 py-3 border border-slate-200 rounded-xl bg-slate-50 text-slate-900 text-sm font-medium transition-all outline-none focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+            placeholder="••••••••"
           />
         </div>
-        <button type="submit" disabled={loading} style={{ width: '100%', padding: '10px', background: '#0070f3', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-slate-900 hover:bg-slate-800 text-white font-medium py-3 px-4 rounded-xl shadow-sm text-sm transition-all hover:shadow duration-150 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+        >
           {loading ? 'Loggar in...' : 'Logga in'}
         </button>
       </form>
-      {message && <p style={{ marginTop: '15px', color: message.startsWith('Fel') ? 'red' : 'green' }}>{message}</p>}
+
+      {message && (
+        <div className={`p-4 rounded-xl text-sm font-medium border ${message.startsWith('Fel') ? 'bg-rose-50 text-rose-800 border-rose-100' : 'bg-emerald-50 text-emerald-800 border-emerald-100'}`}>
+          {message}
+        </div>
+      )}
     </div>
   );
 }
