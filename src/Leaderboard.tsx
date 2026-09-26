@@ -216,8 +216,45 @@ function Leaderboard() {
                     ? Number(chartData[chartData.length - 1].average) /
                       chartData.length
                     : 0;
-                const displayedTargetAveragePerDay =
-                  Math.round(targetAveragePerDay);
+                const displayedTargetAveragePerDay = Math.ceil(
+                  Number(targetAveragePerDay),
+                );
+
+                // Skräddarsydd Tooltip för att visa fullName istället för userId
+                const CustomTooltip = ({ active, payload, label }: any) => {
+                  if (active && payload && payload.length) {
+                    return (
+                      <div className="rounded-lg border border-slate-200 bg-white p-2.5 shadow-md text-xs space-y-1">
+                        <p className="font-semibold text-slate-500 mb-1.5">
+                          {label}
+                        </p>
+                        {payload.map((item: any) => {
+                          // 1. Hantera ideal-linjen (Målsnitt)
+                          if (item.dataKey === "average") {
+                            return (
+                              <p
+                                key={item.dataKey}
+                                style={{ color: item.color }}
+                                className="font-medium"
+                              >
+                                Målsnitt: {item.value} reps
+                              </p>
+                            );
+                          }
+
+                          // 2. För deltagare hämtar vi fullName som skickats via Line-komponentens name-prop
+                          return (
+                            <p key={item.dataKey} style={{ color: item.color }}>
+                              <span className="font-medium">{item.name}:</span>{" "}
+                              {item.value} reps
+                            </p>
+                          );
+                        })}
+                      </div>
+                    );
+                  }
+                  return null;
+                };
 
                 return (
                   <>
@@ -227,10 +264,8 @@ function Leaderboard() {
                         Mål: {tier}
                       </h4>
                       <span className="text-[10px] bg-slate-100 text-slate-500 font-medium px-2 py-0.5 rounded-md">
-                        {groupedLeaders[tier].length}{" "}
-                        {groupedLeaders[tier].length === 1
-                          ? "deltagare"
-                          : "deltagare"}
+                        {tierLeaders.length}{" "}
+                        {tierLeaders.length === 1 ? "deltagare" : "deltagare"}
                       </span>
                     </div>
 
@@ -253,19 +288,17 @@ function Leaderboard() {
                             tick={{ fontSize: 11 }}
                             stroke="#94a3b8"
                           />
-                          <Tooltip
-                            formatter={(value, name, dataKey) => [
-                              `${value} reps`,
-                              name === "average" ? "Målsnitt" : `${dataKey}`,
-                            ]}
-                          />
+
+                          {/* Använd den nya anpassade Tooltip-komponenten här */}
+                          <Tooltip content={<CustomTooltip />} />
+
                           <Legend />
                           {tierLeaders.map((leader, index) => (
                             <Line
                               key={leader.userId}
                               type="monotone"
                               dataKey={leader.userId}
-                              name={leader.fullName}
+                              name={leader.fullName} // Detta skickas med som item.name till Tooltip
                               stroke={
                                 [
                                   "#2563eb",
