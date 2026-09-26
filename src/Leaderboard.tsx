@@ -110,13 +110,13 @@ function Leaderboard() {
         ]);
 
         participantIds.forEach((userId) => {
-          const prof = profileMap.get(userId);
+          const profile = profileMap.get(userId);
           const tier = tierMap.get(userId) || "Ej vald";
 
           const userEntry: LeaderboardUser = {
             userId,
-            alias: prof?.alias || "Anonym koder",
-            fullName: prof?.full_name || "Okänt namn",
+            alias: profile?.alias || "Anonym koder",
+            fullName: profile?.full_name || "Okänt namn",
             totalAmount: userTotals[userId] || 0,
             loggedDays: userLogDays[userId]?.size || 0,
             chosenTier: tier,
@@ -217,7 +217,7 @@ function Leaderboard() {
                       chartData.length
                     : 0;
                 const displayedTargetAveragePerDay =
-                  Math.ceil(targetAveragePerDay);
+                  Math.round(targetAveragePerDay);
 
                 return (
                   <>
@@ -254,9 +254,9 @@ function Leaderboard() {
                             stroke="#94a3b8"
                           />
                           <Tooltip
-                            formatter={(value, name) => [
+                            formatter={(value, name, dataKey) => [
                               `${value} reps`,
-                              name === "average" ? "Målsnitt" : "Progress",
+                              name === "average" ? "Målsnitt" : `${dataKey}`,
                             ]}
                           />
                           <Legend />
@@ -265,7 +265,7 @@ function Leaderboard() {
                               key={leader.userId}
                               type="monotone"
                               dataKey={leader.userId}
-                              name={leader.alias}
+                              name={leader.fullName}
                               stroke={
                                 [
                                   "#2563eb",
@@ -283,7 +283,7 @@ function Leaderboard() {
                             <Line
                               type="linear"
                               dataKey="average"
-                              name={`Målsnitt (${displayedTargetAveragePerDay}/dag)`}
+                              name={`Ideal (${displayedTargetAveragePerDay}/dag)`}
                               stroke="#d97706"
                               strokeDasharray="6 4"
                               strokeWidth={3}
