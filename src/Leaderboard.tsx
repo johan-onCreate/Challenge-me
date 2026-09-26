@@ -229,7 +229,7 @@ function Leaderboard() {
                           {label}
                         </p>
                         {payload.map((item: any) => {
-                          // 1. Hantera ideal-linjen (Målsnitt)
+                          // 1. Hantera ideal-linjen (ideal)
                           if (item.dataKey === "average") {
                             return (
                               <p
@@ -237,7 +237,7 @@ function Leaderboard() {
                                 style={{ color: item.color }}
                                 className="font-medium"
                               >
-                                Målsnitt: {item.value} reps
+                                Ideal: {Math.ceil(Number(item.value))}  reps
                               </p>
                             );
                           }
