@@ -1,5 +1,159 @@
-@import "tailwindcss"; /* Detta ersätter de tre gamla raderna */
+@import "tailwindcss";
+
+@theme inline {
+  --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-inset: var(--inset);
+  --color-outline: var(--outline);
+  --color-outline-soft: var(--outline-soft);
+  --color-content: var(--content);
+  --color-content-secondary: var(--content-secondary);
+  --color-content-muted: var(--content-muted);
+  --color-content-faint: var(--content-faint);
+  --color-content-fainter: var(--content-fainter);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-2: var(--accent-2);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-soft-border: var(--accent-soft-border);
+  --color-accent-soft-text: var(--accent-soft-text);
+  --color-btn: var(--btn);
+  --color-btn-hover: var(--btn-hover);
+  --color-on-btn: var(--on-btn);
+  --color-success: var(--success);
+  --color-success-strong: var(--success-strong);
+  --color-success-soft: var(--success-soft);
+  --color-success-soft-border: var(--success-soft-border);
+  --color-success-soft-text: var(--success-soft-text);
+  --color-danger: var(--danger);
+  --color-danger-strong: var(--danger-strong);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-soft-border: var(--danger-soft-border);
+  --color-danger-soft-text: var(--danger-soft-text);
+  --color-warning: var(--warning);
+  --color-warning-strong: var(--warning-strong);
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-soft-border: var(--warning-soft-border);
+  --color-warning-soft-text: var(--warning-soft-text);
+}
+
+:root {
+  color-scheme: light;
+  --surface: #f8fafc;
+  --raised: #ffffff;
+  --inset: #f1f5f9;
+  --outline: #e2e8f0;
+  --outline-soft: #f1f5f9;
+  --content: #0f172a;
+  --content-secondary: #334155;
+  --content-muted: #475569;
+  --content-faint: #64748b;
+  --content-fainter: #94a3b8;
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-2: #4f46e5;
+  --accent-soft: #eff6ff;
+  --accent-soft-border: #dbeafe;
+  --accent-soft-text: #1e40af;
+  --btn: #0f172a;
+  --btn-hover: #1e293b;
+  --on-btn: #ffffff;
+  --success: #059669;
+  --success-strong: #047857;
+  --success-soft: #ecfdf5;
+  --success-soft-border: #a7f3d0;
+  --success-soft-text: #065f46;
+  --danger: #e11d48;
+  --danger-strong: #be123c;
+  --danger-soft: #fff1f2;
+  --danger-soft-border: #fecdd3;
+  --danger-soft-text: #be123c;
+  --warning: #d97706;
+  --warning-strong: #b45309;
+  --warning-soft: #fffbeb;
+  --warning-soft-border: #fde68a;
+  --warning-soft-text: #92400e;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --surface: #0f172a;
+  --raised: #1e293b;
+  --inset: #020617;
+  --outline: #334155;
+  --outline-soft: #1e293b;
+  --content: #f1f5f9;
+  --content-secondary: #cbd5e1;
+  --content-muted: #94a3b8;
+  --content-faint: #64748b;
+  --content-fainter: #475569;
+  --accent: #3b82f6;
+  --accent-hover: #2563eb;
+  --accent-2: #818cf8;
+  --accent-soft: #172554;
+  --accent-soft-border: #1e3a8a;
+  --accent-soft-text: #93c5fd;
+  --btn: #f1f5f9;
+  --btn-hover: #ffffff;
+  --on-btn: #0f172a;
+  --success: #34d399;
+  --success-strong: #10b981;
+  --success-soft: #022c22;
+  --success-soft-border: #064e3b;
+  --success-soft-text: #6ee7b7;
+  --danger: #fb7185;
+  --danger-strong: #f43f5e;
+  --danger-soft: #4c0519;
+  --danger-soft-border: #881337;
+  --danger-soft-text: #fda4af;
+  --warning: #fbbf24;
+  --warning-strong: #f59e0b;
+  --warning-soft: #451a03;
+  --warning-soft-border: #78350f;
+  --warning-soft-text: #fcd34d;
+}
+
+[data-theme="pink"] {
+  color-scheme: light;
+  --surface: #fdf2f8;
+  --raised: #ffffff;
+  --inset: #fce7f3;
+  --outline: #fbcfe8;
+  --outline-soft: #fce7f3;
+  --content: #500724;
+  --content-secondary: #9d174d;
+  --content-muted: #be185d;
+  --content-faint: #db2777;
+  --content-fainter: #ec4899;
+  --accent: #db2777;
+  --accent-hover: #be185d;
+  --accent-2: #9333ea;
+  --accent-soft: #fce7f3;
+  --accent-soft-border: #f9a8d4;
+  --accent-soft-text: #9d174d;
+  --btn: #500724;
+  --btn-hover: #831843;
+  --on-btn: #ffffff;
+  --success: #059669;
+  --success-strong: #047857;
+  --success-soft: #ecfdf5;
+  --success-soft-border: #a7f3d0;
+  --success-soft-text: #065f46;
+  --danger: #e11d48;
+  --danger-strong: #be123c;
+  --danger-soft: #fff1f2;
+  --danger-soft-border: #fecdd3;
+  --danger-soft-text: #be123c;
+  --warning: #d97706;
+  --warning-strong: #b45309;
+  --warning-soft: #fffbeb;
+  --warning-soft-border: #fde68a;
+  --warning-soft-text: #92400e;
+}
 
 body {
-  @apply bg-slate-50 text-slate-900 antialiased;
+  background-color: var(--surface);
+  color: var(--content);
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 150ms ease, color 150ms ease;
 }

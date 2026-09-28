@@ -4,6 +4,9 @@ import { BrowserRouter } from "react-router-dom";
 // @ts-expect-error Vite processes this stylesheet import at build time.
 import "./index.css";
 import App from "./App.js";
+import { applyTheme, getInitialTheme } from "./theme";
+
+applyTheme(getInitialTheme());
 
 const rootElement = document.getElementById("root");
 
