@@ -7,6 +7,7 @@ import ForgotPassword from "./ForgotPassword";
 import ResetPassword from "./ResetPassword";
 import ChangePassword from "./ChangePassword";
 import Profile from "./Profile";
+import Stats from "./Stats";
 import AdminChallenges from "./AdminChallenges";
 import Leaderboard from "./Leaderboard";
 import ThemeSwitcher from "./ThemeSwitcher";
@@ -117,12 +118,15 @@ function App() {
       <main className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 sm:mt-10">
         {user && (
           <nav className="flex bg-inset p-1 rounded-xl shadow-sm mb-6">
-            <NavLink to="/profile" className={navigationClassName}>
-              Min Utmaning
-            </NavLink>
-            <NavLink to="/leaderboard" className={navigationClassName}>
-              Topplista 🏆
-            </NavLink>
+              <NavLink to="/profile" className={navigationClassName}>
+                Min Utmaning
+              </NavLink>
+              <NavLink to="/stats" className={navigationClassName}>
+                Statistik 📊
+              </NavLink>
+              <NavLink to="/leaderboard" className={navigationClassName}>
+                Topplista 🏆
+              </NavLink>
             {isAdmin && (
               <NavLink to="/admin" className={navigationClassName}>
                 Admin-panel
@@ -156,6 +160,7 @@ function App() {
               element={protectedRoute(<ChangePassword />)}
             />
             <Route path="/profile" element={protectedRoute(<Profile />)} />
+            <Route path="/stats" element={protectedRoute(<Stats />)} />
             <Route
               path="/leaderboard"
               element={protectedRoute(<Leaderboard />)}
