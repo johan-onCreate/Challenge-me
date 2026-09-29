@@ -29,8 +29,8 @@ describe("StatsDashboard", () => {
     expect(html).toContain("Totala poäng");
     expect(html).toContain("Totala reps");
     expect(html).toContain("Snitt per dag");
-    expect(html).toContain("Aktuell serie");
-    expect(html).toContain("Längsta serie");
+    expect(html).toContain("Aktuell streak");
+    expect(html).toContain("Längsta streak");
     expect(html).toContain("Reps över tid");
     expect(html).toContain("Reps per vecka");
     expect(html).toContain("Poäng per challenge");

@@ -161,11 +161,11 @@ export function StatsDashboard({ data }: { data: StatsData }) {
       sub: `${data.loggedDays} loggade dagar`,
     },
     {
-      label: "Aktuell serie",
+      label: "Aktuell streak",
       value: `${data.currentStreak} ${data.currentStreak === 1 ? "dag" : "dagar"}`,
     },
     {
-      label: "Längsta serie",
+      label: "Längsta streak",
       value: `${data.longestStreak} ${data.longestStreak === 1 ? "dag" : "dagar"}`,
     },
   ];
