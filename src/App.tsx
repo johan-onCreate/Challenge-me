@@ -9,6 +9,7 @@ import ChangePassword from "./ChangePassword";
 import Profile from "./Profile";
 import AdminChallenges from "./AdminChallenges";
 import Leaderboard from "./Leaderboard";
+import ThemeSwitcher from "./ThemeSwitcher";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -54,8 +55,8 @@ function App() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-50">
-        <p className="text-lg font-medium text-slate-500 animate-pulse">
+      <div className="flex h-screen items-center justify-center bg-surface">
+        <p className="text-lg font-medium text-content-faint animate-pulse">
           Laddar portalen...
         </p>
       </div>
@@ -63,7 +64,7 @@ function App() {
   }
 
   const navigationClassName = ({ isActive }: { isActive: boolean }) =>
-    `flex-1 text-center py-2 text-xs font-semibold rounded-lg transition-all ${isActive ? "bg-white text-slate-900 shadow-sm" : "text-slate-600 hover:text-slate-900"}`;
+    `flex-1 text-center py-2 text-xs font-semibold rounded-lg transition-all ${isActive ? "bg-raised text-content shadow-sm" : "text-content-muted hover:text-content"}`;
 
   const protectedRoute = (element: React.ReactNode) =>
     user ? element : <Navigate to="/login" replace />;
@@ -72,47 +73,50 @@ function App() {
     user ? <Navigate to="/profile" replace /> : element;
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-12">
+    <div className="min-h-screen bg-surface pb-12">
       {/* Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+      <header className="bg-raised border-b border-outline sticky top-0 z-50 shadow-sm">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 min-h-16 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <h1 className="shrink-0 text-base sm:text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+          <h1 className="shrink-0 text-base sm:text-xl font-bold bg-gradient-to-r from-accent to-accent-2 bg-clip-text text-transparent">
             ⚡️ Challenges Portal
           </h1>
 
-          {user && (
-            <div className="w-full sm:w-auto flex items-center justify-between sm:justify-end gap-2 sm:gap-4">
-              <span className="text-xs sm:text-sm text-slate-600 max-w-32 sm:max-w-none truncate">
-                <strong className="text-slate-900 font-semibold">
-                  {user.user_metadata?.alias || user.email}
-                </strong>
-                {isAdmin && (
-                  <span className="ml-1.5 text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-bold">
-                    Admin
-                  </span>
-                )}
-              </span>
-              <Link
-                to="/change-password"
-                className="text-xs text-blue-600 hover:text-blue-800 font-medium"
-              >
-                Byt lösenord
-              </Link>
-              <button
-                onClick={() => supabase.auth.signOut()}
-                className="text-xs bg-rose-50 text-rose-600 hover:bg-rose-100 px-2.5 py-1.5 font-medium rounded-lg transition-colors"
-              >
-                Logga ut
-              </button>
-            </div>
-          )}
+          <div className="w-full sm:w-auto flex items-center justify-between sm:justify-end gap-2 sm:gap-4">
+            <ThemeSwitcher />
+            {user && (
+              <>
+                <span className="text-xs sm:text-sm text-content-muted max-w-32 sm:max-w-none truncate">
+                  <strong className="text-content font-semibold">
+                    {user.user_metadata?.alias || user.email}
+                  </strong>
+                  {isAdmin && (
+                    <span className="ml-1.5 text-xs bg-accent-soft text-accent-soft-text px-2 py-0.5 rounded-full font-bold">
+                      Admin
+                    </span>
+                  )}
+                </span>
+                <Link
+                  to="/change-password"
+                  className="text-xs text-accent hover:text-accent-hover font-medium"
+                >
+                  Byt lösenord
+                </Link>
+                <button
+                  onClick={() => supabase.auth.signOut()}
+                  className="text-xs bg-danger-soft text-danger hover:bg-danger-soft-border px-2.5 py-1.5 font-medium rounded-lg transition-colors"
+                >
+                  Logga ut
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </header>
 
       {/* Main Content Area */}
       <main className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 sm:mt-10">
         {user && (
-          <nav className="flex bg-slate-200 p-1 rounded-xl shadow-sm mb-6">
+          <nav className="flex bg-inset p-1 rounded-xl shadow-sm mb-6">
             <NavLink to="/profile" className={navigationClassName}>
               Min Utmaning
             </NavLink>
@@ -128,7 +132,7 @@ function App() {
         )}
 
         {!user && (
-          <nav className="flex bg-slate-100 p-1 rounded-xl shadow-sm mb-6">
+          <nav className="flex bg-inset p-1 rounded-xl shadow-sm mb-6">
             <NavLink to="/login" className={navigationClassName}>
               Logga in
             </NavLink>
@@ -138,7 +142,7 @@ function App() {
           </nav>
         )}
 
-        <div className="bg-white border border-slate-200 p-4 sm:p-6 lg:p-8 rounded-2xl shadow-sm">
+        <div className="bg-raised border border-outline p-4 sm:p-6 lg:p-8 rounded-2xl shadow-sm">
           <Routes>
             <Route path="/login" element={publicRoute(<Login />)} />
             <Route path="/register" element={publicRoute(<Register />)} />

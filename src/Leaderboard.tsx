@@ -179,7 +179,7 @@ function Leaderboard() {
 
   if (loading)
     return (
-      <p className="text-sm text-slate-400 animate-pulse text-center py-6">
+      <p className="text-sm text-content-fainter animate-pulse text-center py-6">
         Laddar ställningen...
       </p>
     );
@@ -188,19 +188,19 @@ function Leaderboard() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="text-center sm:text-left">
-        <h3 className="text-xl font-bold text-slate-900 tracking-tight">
+        <h3 className="text-xl font-bold text-content tracking-tight">
           Topplista
         </h3>
-        <p className="text-xs text-slate-500 mt-0.5">
+        <p className="text-xs text-content-faint mt-0.5">
           Aktuell utmaning:{" "}
-          <span className="font-semibold text-slate-800">
+          <span className="font-semibold text-content-secondary">
             {challengeTitle || "Ingen aktiv"}
           </span>
         </p>
       </div>
 
       {tierKeys.length === 0 ? (
-        <div className="text-center py-8 text-slate-500 text-sm bg-slate-50 rounded-xl border border-dashed border-slate-200">
+        <div className="text-center py-8 text-content-faint text-sm bg-inset rounded-xl border border-dashed border-outline">
           Ingen har antagit utmaningen eller loggat några framsteg än.
         </div>
       ) : (
@@ -224,8 +224,8 @@ function Leaderboard() {
                 const CustomTooltip = ({ active, payload, label }: any) => {
                   if (active && payload && payload.length) {
                     return (
-                      <div className="rounded-lg border border-slate-200 bg-white p-2.5 shadow-md text-xs space-y-1">
-                        <p className="font-semibold text-slate-500 mb-1.5">
+                      <div className="rounded-lg border border-outline bg-raised p-2.5 shadow-md text-xs space-y-1">
+                        <p className="font-semibold text-content-faint mb-1.5">
                           {label}
                         </p>
                         {payload.map((item: any) => {
@@ -259,40 +259,49 @@ function Leaderboard() {
                 return (
                   <>
                     <div className="flex items-center gap-2">
-                      <span className="inline-block w-2 h-2 rounded-full bg-blue-600" />
-                      <h4 className="text-sm font-bold uppercase tracking-wider text-slate-700">
+                      <span className="inline-block w-2 h-2 rounded-full bg-accent" />
+                      <h4 className="text-sm font-bold uppercase tracking-wider text-content-secondary">
                         Mål: {tier}
                       </h4>
-                      <span className="text-[10px] bg-slate-100 text-slate-500 font-medium px-2 py-0.5 rounded-md">
+                      <span className="text-[10px] bg-inset text-content-faint font-medium px-2 py-0.5 rounded-md">
                         {tierLeaders.length}{" "}
                         {tierLeaders.length === 1 ? "deltagare" : "deltagare"}
                       </span>
                     </div>
 
-                    <div className="h-80 w-full rounded-xl border border-slate-100 bg-slate-50/60 p-2 sm:p-3">
+                    <div className="h-80 w-full rounded-xl border border-outline-soft bg-inset/60 p-2 sm:p-3">
                       <ResponsiveContainer width="100%" height="100%">
                         <LineChart
                           data={chartData}
                           margin={{ top: 8, right: 12, left: 0, bottom: 8 }}
                         >
-                          <CartesianGrid strokeDasharray="3 3" />
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            stroke="var(--outline-soft)"
+                          />
                           <XAxis
                             dataKey="date"
-                            tick={{ fontSize: 11 }}
-                            stroke="#94a3b8"
+                            tick={{ fontSize: 11, fill: "var(--content-faint)" }}
+                            stroke="var(--outline)"
                           />
                           <YAxis
                             type="number"
                             allowDecimals={false}
                             width={42}
-                            tick={{ fontSize: 11 }}
-                            stroke="#94a3b8"
+                            tick={{ fontSize: 11, fill: "var(--content-faint)" }}
+                            stroke="var(--outline)"
                           />
 
                           {/* Använd den nya anpassade Tooltip-komponenten här */}
                           <Tooltip content={<CustomTooltip />} />
 
-                          <Legend />
+                          <Legend
+                            formatter={(value: string) => (
+                              <span className="text-xs text-content-muted">
+                                {value}
+                              </span>
+                            )}
+                          />
                           {tierLeaders.map((leader, index) => (
                             <Line
                               key={leader.userId}
@@ -330,16 +339,16 @@ function Leaderboard() {
                 );
               })()}
 
-              <div className="overflow-hidden border border-slate-100 rounded-2xl shadow-sm bg-white">
+              <div className="overflow-hidden border border-outline-soft rounded-2xl shadow-sm bg-raised">
                 <table className="w-full border-collapse text-left">
                   <thead>
-                    <tr className="bg-slate-50 text-slate-500 text-[10px] uppercase font-bold tracking-wider border-b border-slate-100">
+                    <tr className="bg-inset text-content-faint text-[10px] uppercase font-bold tracking-wider border-b border-outline-soft">
                       <th className="py-2.5 px-4 w-12 text-center">Plats</th>
                       <th className="py-2.5 px-4">Deltagare</th>
                       <th className="py-2.5 px-4 text-right">Totalt loggat</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 text-sm">
+                  <tbody className="divide-y divide-outline-soft text-sm">
                     {groupedLeaders[tier].map((leader, index) => {
                       const isTop3 = index < 3;
                       const medalEmojis = ["🥇", "🥈", "🥉"];
@@ -347,9 +356,9 @@ function Leaderboard() {
                       return (
                         <tr
                           key={index}
-                          className={`hover:bg-slate-50/40 transition-colors ${index === 0 ? "bg-amber-50/10" : ""}`}
+                          className={`hover:bg-inset/40 transition-colors ${index === 0 ? "bg-warning-soft/10" : ""}`}
                         >
-                          <td className="py-3 px-4 font-bold text-center text-slate-400 text-xs">
+                          <td className="py-3 px-4 font-bold text-center text-content-fainter text-xs">
                             {isTop3 ? (
                               <span className="text-base">
                                 {medalEmojis[index]}
@@ -359,16 +368,16 @@ function Leaderboard() {
                             )}
                           </td>
                           <td className="py-3 px-4">
-                            <div className="font-bold text-slate-900 text-xs sm:text-sm">
+                            <div className="font-bold text-content text-xs sm:text-sm">
                               {leader.alias}
                             </div>
-                            <div className="text-[11px] text-slate-400">
+                            <div className="text-[11px] text-content-fainter">
                               {leader.fullName}
                             </div>
                           </td>
-                          <td className="py-3 px-4 text-right font-extrabold text-slate-900 text-sm sm:text-base">
+                          <td className="py-3 px-4 text-right font-extrabold text-content text-sm sm:text-base">
                             {leader.totalAmount}{" "}
-                            <span className="text-xs font-normal text-slate-400">
+                            <span className="text-xs font-normal text-content-fainter">
                               reps
                             </span>
                           </td>

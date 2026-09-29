@@ -206,34 +206,34 @@ function AdminChallenges() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h3 className="text-xl font-bold text-slate-900 tracking-tight">
+        <h3 className="text-xl font-bold text-content tracking-tight">
           Admin-panel
         </h3>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-content-faint">
           Skapa, hantera eller ta bort dina utmaningar.
         </p>
       </div>
 
       <form
         onSubmit={handleSubmitChallenge}
-        className="space-y-4 bg-slate-50 p-4 rounded-xl border border-slate-100"
+        className="space-y-4 bg-inset p-4 rounded-xl border border-outline-soft"
       >
         <div className="flex items-center justify-between">
-          <h4 className="font-bold text-sm text-slate-900">
+          <h4 className="font-bold text-sm text-content">
             {editingChallengeId ? "Redigera utmaning" : "Skapa utmaning"}
           </h4>
           {editingChallengeId && (
             <button
               type="button"
               onClick={resetForm}
-              className="text-xs text-slate-500 hover:text-slate-900 font-medium"
+              className="text-xs text-content-faint hover:text-content font-medium"
             >
               Avbryt redigering
             </button>
           )}
         </div>
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">
+          <label className="block text-xs font-semibold uppercase tracking-wider text-content-muted mb-1">
             Titel
           </label>
           <input
@@ -241,12 +241,12 @@ function AdminChallenges() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
-            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white outline-none focus:border-indigo-600"
+            className="w-full px-3 py-2 border border-outline rounded-lg text-sm bg-raised outline-none focus:border-accent"
           />
         </div>
 
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">
+          <label className="block text-xs font-semibold uppercase tracking-wider text-content-muted mb-1">
             Beskrivning
           </label>
           <textarea
@@ -254,13 +254,13 @@ function AdminChallenges() {
             onChange={(e) => setDescription(e.target.value)}
             required
             rows={2}
-            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white outline-none focus:border-indigo-600"
+            className="w-full px-3 py-2 border border-outline rounded-lg text-sm bg-raised outline-none focus:border-accent"
           />
         </div>
 
         {/* NIVÅBYGGARE */}
         <div className="space-y-2">
-          <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600">
+          <label className="block text-xs font-semibold uppercase tracking-wider text-content-muted">
             Konfigurera Nivåer / Mål
           </label>
           <div className="flex gap-2">
@@ -268,13 +268,13 @@ function AdminChallenges() {
               type="text"
               value={newTierInput}
               onChange={(e) => setNewTierInput(e.target.value)}
-              className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white outline-none"
+              className="flex-1 px-3 py-2 border border-outline rounded-lg text-sm bg-raised outline-none"
               placeholder="t.ex. 1000 squats"
             />
             <button
               type="button"
               onClick={handleAddTier}
-              className="bg-slate-900 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-slate-800"
+              className="bg-btn text-on-btn px-3 py-2 rounded-lg text-sm font-medium hover:bg-btn-hover"
             >
               Lägg till
             </button>
@@ -285,13 +285,13 @@ function AdminChallenges() {
               {tiers.map((t, idx) => (
                 <span
                   key={idx}
-                  className="inline-flex items-center gap-1 text-xs bg-indigo-50 text-indigo-700 font-semibold px-2.5 py-1 rounded-lg border border-indigo-100"
+                  className="inline-flex items-center gap-1 text-xs bg-accent-soft text-accent-soft-text font-semibold px-2.5 py-1 rounded-lg border border-accent-soft-border"
                 >
                   {t}
                   <button
                     type="button"
                     onClick={() => handleRemoveTier(idx)}
-                    className="text-indigo-400 hover:text-indigo-900 font-bold ml-1 text-sm leading-none"
+                    className="text-content-faint hover:text-content font-bold ml-1 text-sm leading-none"
                   >
                     &times;
                   </button>
@@ -303,7 +303,7 @@ function AdminChallenges() {
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-content-muted mb-1">
               Poäng
             </label>
             <input
@@ -311,11 +311,11 @@ function AdminChallenges() {
               value={points}
               onChange={(e) => setPoints(Number(e.target.value))}
               required
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white"
+              className="w-full px-3 py-2 border border-outline rounded-lg text-sm bg-raised"
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-content-muted mb-1">
               Startdag
             </label>
             <input
@@ -323,11 +323,11 @@ function AdminChallenges() {
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
               required
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white"
+              className="w-full px-3 py-2 border border-outline rounded-lg text-sm bg-raised"
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-content-muted mb-1">
               Slutdag
             </label>
             <input
@@ -335,7 +335,7 @@ function AdminChallenges() {
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
               required
-              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white"
+              className="w-full px-3 py-2 border border-outline rounded-lg text-sm bg-raised"
             />
           </div>
         </div>
@@ -343,7 +343,7 @@ function AdminChallenges() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg text-sm shadow-sm transition-colors"
+          className="w-full bg-accent hover:bg-accent-hover text-white font-medium py-2.5 rounded-lg text-sm shadow-sm transition-colors"
         >
           {loading
             ? "Sparar..."
@@ -354,17 +354,17 @@ function AdminChallenges() {
       </form>
 
       {message && (
-        <div className="p-3 text-xs bg-emerald-50 text-emerald-800 border border-emerald-100 rounded-lg font-medium">
+        <div className="p-3 text-xs bg-success-soft text-success-soft-text border border-success-soft-border rounded-lg font-medium">
           {message}
         </div>
       )}
 
-      <div className="space-y-3 bg-amber-50 p-4 rounded-xl border border-amber-100">
+      <div className="space-y-3 bg-warning-soft p-4 rounded-xl border border-warning-soft-border">
         <div>
-          <h4 className="font-bold text-sm text-slate-900">
+          <h4 className="font-bold text-sm text-content">
             Användare ({users.length})
           </h4>
-          <p className="text-xs text-slate-600 mt-1">
+          <p className="text-xs text-content-muted mt-1">
             Skicka en säker återställningslänk till en användare.
           </p>
         </div>
@@ -372,14 +372,14 @@ function AdminChallenges() {
           {users.map((user) => (
             <div
               key={user.id}
-              className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3 rounded-lg border border-amber-100"
+              className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-raised p-3 rounded-lg border border-warning-soft-border"
             >
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-slate-900 truncate">
+                <p className="text-sm font-semibold text-content truncate">
                   {user.alias || user.full_name || "Namnlös användare"}
                   {user.is_admin && " (admin)"}
                 </p>
-                <p className="text-xs text-slate-500 truncate">
+                <p className="text-xs text-content-faint truncate">
                   {user.email || "Ingen e-postadress"}
                 </p>
               </div>
@@ -387,7 +387,7 @@ function AdminChallenges() {
                 type="button"
                 onClick={() => handleSendPasswordReset(user)}
                 disabled={!user.email || resettingUserId === user.id}
-                className="w-full sm:w-auto shrink-0 bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full sm:w-auto shrink-0 bg-warning hover:bg-warning-strong text-white px-3 py-1.5 rounded-lg text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {resettingUserId === user.id ? "Skickar..." : "Återställ"}
               </button>
@@ -396,7 +396,7 @@ function AdminChallenges() {
         </div>
         {userMessage && (
           <p
-            className={`text-xs font-medium ${userMessage.startsWith("Fel") ? "text-rose-600" : "text-emerald-700"}`}
+            className={`text-xs font-medium ${userMessage.startsWith("Fel") ? "text-danger" : "text-success-strong"}`}
           >
             {userMessage}
           </p>
@@ -404,26 +404,26 @@ function AdminChallenges() {
       </div>
 
       {/* LISTA MED UTMANINGAR */}
-      <div className="space-y-3 pt-4 border-t border-slate-100">
-        <h4 className="font-bold text-sm text-slate-900">
+      <div className="space-y-3 pt-4 border-t border-outline-soft">
+        <h4 className="font-bold text-sm text-content">
           Administrera utmaningar ({challenges.length})
         </h4>
         <div className="space-y-2">
           {challenges.map((c) => (
             <div
               key={c.id}
-              className={`p-4 border rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${c.is_active ? "bg-indigo-50/40 border-indigo-200 shadow-sm" : "bg-white border-slate-200 shadow-sm"}`}
+              className={`p-4 border rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${c.is_active ? "bg-accent-soft/40 border-accent-soft-border shadow-sm" : "bg-raised border-outline shadow-sm"}`}
             >
               <div className="space-y-1">
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="font-bold text-sm text-slate-900">
+                  <span className="font-bold text-sm text-content">
                     {c.title}
                   </span>
-                  <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-bold">
+                  <span className="text-[10px] bg-inset text-content-muted px-1.5 py-0.5 rounded font-bold">
                     +{c.points} XP
                   </span>
                   {c.is_active && (
-                    <span className="text-[10px] bg-indigo-600 text-white px-2 py-0.5 rounded font-semibold animate-pulse">
+                    <span className="text-[10px] bg-accent text-white px-2 py-0.5 rounded font-semibold animate-pulse">
                       Aktiv
                     </span>
                   )}
@@ -433,7 +433,7 @@ function AdminChallenges() {
                     {c.tiers.map((t, idx) => (
                       <span
                         key={idx}
-                        className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-medium"
+                        className="text-[10px] bg-inset text-content-muted px-2 py-0.5 rounded-md font-medium"
                       >
                         Nivå: {t}
                       </span>
@@ -444,20 +444,20 @@ function AdminChallenges() {
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   onClick={() => handleEditChallenge(c)}
-                  className="text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1.5 rounded-xl font-medium"
+                  className="text-xs bg-accent-soft hover:bg-accent-soft-border text-accent-soft-text px-3 py-1.5 rounded-xl font-medium"
                 >
                   Redigera
                 </button>
                 <button
                   onClick={() => handleSetActive(c.id)}
                   disabled={c.is_active}
-                  className="text-xs bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 px-3 py-1.5 rounded-xl font-medium shadow-sm disabled:cursor-default disabled:opacity-60"
+                  className="text-xs bg-raised hover:bg-inset text-content-secondary border border-outline px-3 py-1.5 rounded-xl font-medium shadow-sm disabled:cursor-default disabled:opacity-60"
                 >
                   {c.is_active ? "Aktiv" : "Aktivera"}
                 </button>
                 <button
                   onClick={() => handleDeleteChallenge(c.id)}
-                  className="text-xs bg-rose-50 hover:bg-rose-100 text-rose-600 px-3 py-1.5 rounded-xl font-medium"
+                  className="text-xs bg-danger-soft hover:bg-danger-soft-border text-danger px-3 py-1.5 rounded-xl font-medium"
                 >
                   Radera
                 </button>

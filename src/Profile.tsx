@@ -575,27 +575,27 @@ function Profile() {
       </div>
 
       {/* Aktuell utmaning */}
-      <div className="space-y-4 border-t border-slate-100 pt-6">
-        <h3 className="text-lg font-bold text-slate-900 tracking-tight">
+      <div className="space-y-4 border-t border-outline-soft pt-6">
+        <h3 className="text-lg font-bold text-content tracking-tight">
           Aktuell utmaning
         </h3>
 
         {loadingChallenge ? (
-          <p className="text-sm text-slate-400 animate-pulse">
+          <p className="text-sm text-content-fainter animate-pulse">
             Hämtar utmaning...
           </p>
         ) : !currentChallenge ? (
-          <p className="text-sm text-slate-500 italic">
+          <p className="text-sm text-content-faint italic">
             Ingen aktiv utmaning just nu.
           </p>
         ) : (
-          <div className="p-5 border rounded-2xl bg-white border-slate-200 shadow-sm space-y-5">
+          <div className="p-5 border rounded-2xl bg-raised border-outline shadow-sm space-y-5">
             <div>
               <div className="flex items-center gap-2">
-                <h4 className="font-bold text-base text-slate-900">
+                <h4 className="font-bold text-base text-content">
                   {currentChallenge.title}
                 </h4>
-                <span className="text-xs px-2.5 py-0.5 font-bold rounded-full bg-amber-100 text-amber-800">
+                <span className="text-xs px-2.5 py-0.5 font-bold rounded-full bg-warning-soft text-warning-soft-text">
                   +
                   {calculateEarnedPoints(
                     totalLoggedAmount,
@@ -605,7 +605,7 @@ function Profile() {
                   / {currentChallenge.points} XP
                 </span>
               </div>
-              <p className="text-sm text-slate-600 mt-1">
+              <p className="text-sm text-content-muted mt-1">
                 {currentChallenge.description}
               </p>
             </div>
@@ -614,15 +614,15 @@ function Profile() {
             {!isCurrentCompleted &&
               currentChallenge.tiers &&
               currentChallenge.tiers.length > 0 && (
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-3">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">
+                <div className="bg-inset p-4 rounded-xl border border-outline-soft space-y-3">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-content-muted">
                     Välj din målsättning:
                   </label>
                   <div className="flex gap-4">
                     {currentChallenge.tiers.map((t, idx) => (
                       <label
                         key={idx}
-                        className="flex items-center gap-1.5 text-sm font-medium text-slate-700 cursor-pointer"
+                        className="flex items-center gap-1.5 text-sm font-medium text-content-secondary cursor-pointer"
                       >
                         <input
                           type="radio"
@@ -630,7 +630,7 @@ function Profile() {
                           value={t}
                           checked={chosenTier === t}
                           onChange={(e) => setChosenTier(e.target.value)}
-                          className="text-blue-600"
+                          className="text-accent"
                         />
                         {t}
                       </label>
@@ -638,7 +638,7 @@ function Profile() {
                   </div>
                   <button
                     onClick={handleStartChallenge}
-                    className="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-xl text-sm transition-colors"
+                    className="w-full mt-2 bg-accent hover:bg-accent-hover text-white font-semibold py-2 rounded-xl text-sm transition-colors"
                   >
                     Anta utmaningen!
                   </button>
@@ -647,9 +647,9 @@ function Profile() {
 
             {/* PROGRESS MÄTARE & LOGGNING */}
             {isCurrentCompleted && (
-              <div className="space-y-5 border-t border-slate-100 pt-4">
+              <div className="space-y-5 border-t border-outline-soft pt-4">
                 {savedTierUnavailable && (
-                  <div className="p-4 rounded-xl border border-amber-200 bg-amber-50 text-amber-900 space-y-1">
+                  <div className="p-4 rounded-xl border border-warning-soft-border bg-warning-soft text-warning-soft-text space-y-1">
                     <p className="text-sm font-bold">
                       Din valda nivå har tagits bort
                     </p>
@@ -664,16 +664,16 @@ function Profile() {
                 )}
 
                 {challengeDates.length > 0 && (
-                  <div className="hidden space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                  <div className="hidden space-y-3 bg-inset p-4 rounded-xl border border-outline-soft">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="text-xs font-bold uppercase tracking-wider text-slate-600">
+                      <span className="text-xs font-bold uppercase tracking-wider text-content-muted">
                         Kalender
                       </span>
-                      <span className="text-[11px] text-slate-500">
+                      <span className="text-[11px] text-content-faint">
                         Klicka på en dag för att logga aktivitet
                       </span>
                     </div>
-                    <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                    <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-bold uppercase tracking-wide text-content-fainter">
                       {["Sön", "Mån", "Tis", "Ons", "Tor", "Fre", "Lör"].map(
                         (day) => (
                           <span key={day}>{day}</span>
@@ -697,9 +697,9 @@ function Profile() {
                           return (
                             <div
                               key={date}
-                              className="min-h-14 rounded-lg border border-blue-300 bg-blue-50 p-1"
+                              className="min-h-14 rounded-lg border border-accent-soft-border bg-accent-soft p-1"
                             >
-                              <span className="block text-xs font-bold text-blue-900">
+                              <span className="block text-xs font-bold text-accent-soft-text">
                                 {dayNumber}
                               </span>
                               <input
@@ -709,21 +709,21 @@ function Profile() {
                                 onChange={(event) =>
                                   setEditingCalendarAmount(event.target.value)
                                 }
-                                className="w-full rounded border border-blue-200 px-1 py-0.5 text-[10px] text-slate-900"
+                                className="w-full rounded border border-accent-soft-border px-1 py-0.5 text-[10px] text-content"
                                 autoFocus
                               />
                               <div className="mt-1 flex gap-1">
                                 <button
                                   type="button"
                                   onClick={handleUpdateCalendarLog}
-                                  className="flex-1 rounded bg-emerald-600 px-1 py-0.5 text-[10px] font-bold text-white"
+                                  className="flex-1 rounded bg-success-strong px-1 py-0.5 text-[10px] font-bold text-white"
                                 >
                                   Spara
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => setEditingCalendarDate(null)}
-                                  className="rounded bg-white px-1 py-0.5 text-[10px] font-bold text-slate-500"
+                                  className="rounded bg-raised px-1 py-0.5 text-[10px] font-bold text-content-faint"
                                 >
                                   X
                                 </button>
@@ -746,12 +746,12 @@ function Profile() {
                             }}
                             className={`min-h-14 rounded-lg border p-1 text-left transition-colors ${
                               loggedAmount > 0
-                                ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+                                ? "border-success-soft-border bg-success-soft text-success-soft-text"
                                 : isToday
-                                  ? "border-blue-300 bg-blue-50 text-blue-900"
+                                  ? "border-accent-soft-border bg-accent-soft text-accent-soft-text"
                                   : isFuture
-                                    ? "border-slate-100 bg-white text-slate-300"
-                                    : "border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:bg-blue-50"
+                                    ? "border-outline-soft bg-raised text-content-fainter"
+                                    : "border-outline bg-raised text-content-muted hover:border-accent-soft-border hover:bg-accent-soft"
                             } disabled:cursor-not-allowed`}
                             title={`${date}${loggedAmount > 0 ? `: ${loggedAmount} reps` : ": lägg till reps"}`}
                           >
@@ -767,13 +767,13 @@ function Profile() {
                         );
                       })}
                     </div>
-                    <div className="flex flex-wrap gap-3 text-[11px] text-slate-500">
+                    <div className="flex flex-wrap gap-3 text-[11px] text-content-faint">
                       <span className="flex items-center gap-1">
-                        <span className="h-2.5 w-2.5 rounded-sm bg-emerald-200" />
+                        <span className="h-2.5 w-2.5 rounded-sm bg-success-soft-border" />
                         Loggad
                       </span>
                       <span className="flex items-center gap-1">
-                        <span className="h-2.5 w-2.5 rounded-sm bg-blue-200" />
+                        <span className="h-2.5 w-2.5 rounded-sm bg-accent-soft-border" />
                         Idag
                       </span>
                     </div>
@@ -782,15 +782,15 @@ function Profile() {
 
                 {currentChallenge.tiers &&
                   currentChallenge.tiers.length > 0 && (
-                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-3">
-                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">
+                    <div className="bg-inset p-4 rounded-xl border border-outline-soft space-y-3">
+                      <label className="block text-xs font-bold uppercase tracking-wider text-content-muted">
                         Ändra nivå
                       </label>
                       <div className="flex flex-wrap gap-4">
                         {currentChallenge.tiers.map((tier, index) => (
                           <label
                             key={index}
-                            className="flex items-center gap-1.5 text-sm font-medium text-slate-700 cursor-pointer"
+                            className="flex items-center gap-1.5 text-sm font-medium text-content-secondary cursor-pointer"
                           >
                             <input
                               type="radio"
@@ -801,7 +801,7 @@ function Profile() {
                                 setChosenTier(e.target.value);
                                 setTierMessage("");
                               }}
-                              className="text-blue-600"
+                              className="text-accent"
                             />
                             {tier}
                           </label>
@@ -811,13 +811,13 @@ function Profile() {
                         type="button"
                         onClick={handleChangeTier}
                         disabled={tierLoading || chosenTier === savedTier}
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-xl text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full bg-accent hover:bg-accent-hover text-white font-semibold py-2 rounded-xl text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {tierLoading ? "Sparar..." : "Spara ny nivå"}
                       </button>
                       {tierMessage && (
                         <p
-                          className={`text-xs font-medium ${tierMessage.startsWith("Fel") ? "text-rose-600" : "text-emerald-600"}`}
+                          className={`text-xs font-medium ${tierMessage.startsWith("Fel") ? "text-danger" : "text-success-strong"}`}
                         >
                           {tierMessage}
                         </p>
@@ -827,15 +827,15 @@ function Profile() {
 
                 {/* Progress Bar */}
                 <div className="space-y-1.5">
-                  <div className="flex justify-between text-xs font-bold text-slate-600 uppercase">
+                  <div className="flex justify-between text-xs font-bold text-content-muted uppercase">
                     <span>
                       Framsteg: {totalLoggedAmount} / {savedTier}
                     </span>
                     <span>{progressPercent}%</span>
                   </div>
-                  <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden border border-slate-200/50">
+                  <div className="w-full bg-inset h-3 rounded-full overflow-hidden border border-outline/50">
                     <div
-                      className="bg-emerald-500 h-full transition-all duration-500"
+                      className="bg-success h-full transition-all duration-500"
                       style={{ width: `${progressPercent}%` }}
                     />
                   </div>
@@ -844,9 +844,9 @@ function Profile() {
                 {/* Loggningsformulär */}
                 <form
                   onSubmit={handleLogDailyProgress}
-                  className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100"
+                  className="space-y-3 bg-inset p-4 rounded-xl border border-outline-soft"
                 >
-                  <span className="block text-xs font-bold uppercase tracking-wider text-slate-600">
+                  <span className="block text-xs font-bold uppercase tracking-wider text-content-muted">
                     Logga aktivitet
                   </span>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -857,7 +857,7 @@ function Profile() {
                       max={maxDate}
                       onChange={(e) => setLogDate(e.target.value)}
                       required
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white"
+                      className="w-full px-3 py-2 border border-outline rounded-xl text-sm bg-raised"
                     />
                     <input
                       type="number"
@@ -865,11 +865,11 @@ function Profile() {
                       onChange={(e) => setLogAmount(e.target.value)}
                       placeholder="Antal reps"
                       required
-                      className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white"
+                      className="w-full px-3 py-2 border border-outline rounded-xl text-sm bg-raised"
                     />
                     <button
                       type="submit"
-                      className="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-2 rounded-xl text-sm transition-colors"
+                      className="w-full bg-btn hover:bg-btn-hover text-on-btn font-semibold py-2 rounded-xl text-sm transition-colors"
                     >
                       Logga reps
                     </button>
@@ -879,19 +879,19 @@ function Profile() {
                 {/* HISTORIK MED REDIGERINGSFUNKTIONER */}
                 {dailyLogs.length > 0 && (
                   <div className="space-y-2 pt-2">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-content-faint">
                       Dina registrerade loggar
                     </label>
-                    <div className="max-h-40 overflow-y-auto space-y-1.5 border border-slate-100 rounded-xl p-2 bg-slate-50/50">
+                    <div className="max-h-40 overflow-y-auto space-y-1.5 border border-outline-soft rounded-xl p-2 bg-inset/50">
                       {dailyLogs.map((log) => (
                         <div
                           key={log.id}
-                          className="flex justify-between items-center text-xs text-slate-600 bg-white p-2 rounded-lg border border-slate-200/40 shadow-sm"
+                          className="flex justify-between items-center text-xs text-content-muted bg-raised p-2 rounded-lg border border-outline/40 shadow-sm"
                         >
                           {/* Om raden är i redigeringsläge, visa input, annars text */}
                           {editingLogId === log.id ? (
                             <div className="flex gap-2 items-center flex-1">
-                              <span className="font-semibold text-slate-500">
+                              <span className="font-semibold text-content-faint">
                                 📅 {log.logged_at}:
                               </span>
                               <input
@@ -900,17 +900,17 @@ function Profile() {
                                 onChange={(e) =>
                                   setEditingAmount(e.target.value)
                                 }
-                                className="w-20 px-2 py-1 border border-slate-300 rounded-md text-slate-900"
+                                className="w-20 px-2 py-1 border border-outline rounded-md text-content"
                               />
                               <button
                                 onClick={() => handleUpdateLog(log.id)}
-                                className="bg-emerald-600 text-white px-2 py-1 rounded-md font-medium"
+                                className="bg-success-strong text-white px-2 py-1 rounded-md font-medium"
                               >
                                 Spara
                               </button>
                               <button
                                 onClick={() => setEditingLogId(null)}
-                                className="text-slate-400 hover:text-slate-600"
+                                className="text-content-fainter hover:text-content-muted"
                               >
                                 Avbryt
                               </button>
@@ -919,12 +919,12 @@ function Profile() {
                             <>
                               <span>
                                 📅{" "}
-                                <strong className="font-medium text-slate-700">
+                                <strong className="font-medium text-content-secondary">
                                   {log.logged_at}
                                 </strong>
                               </span>
                               <div className="flex items-center gap-3">
-                                <span className="font-bold text-slate-900">
+                                <span className="font-bold text-content">
                                   {log.amount} reps
                                 </span>
 
@@ -934,7 +934,7 @@ function Profile() {
                                     setEditingLogId(log.id);
                                     setEditingAmount(String(log.amount));
                                   }}
-                                  className="text-blue-500 hover:text-blue-700 font-medium"
+                                  className="text-accent hover:text-accent-hover font-medium"
                                 >
                                   Ändra
                                 </button>
@@ -942,7 +942,7 @@ function Profile() {
                                 {/* Radera-knapp */}
                                 <button
                                   onClick={() => handleDeleteLog(log.id)}
-                                  className="text-rose-500 hover:text-rose-700 font-medium"
+                                  className="text-danger hover:text-danger-strong font-medium"
                                 >
                                   Ta bort
                                 </button>
@@ -962,7 +962,7 @@ function Profile() {
                     setCancelPhrase("");
                     setShowCancelDialog(true);
                   }}
-                  className="w-full border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 font-semibold py-2 rounded-xl text-sm transition-colors"
+                  className="w-full border border-danger-soft-border bg-danger-soft text-danger hover:bg-danger-soft-border font-semibold py-2 rounded-xl text-sm transition-colors"
                 >
                   Avbryt challenge
                 </button>
@@ -970,19 +970,19 @@ function Profile() {
             )}
 
             {challengeDates.length > 0 && (
-              <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
+              <div className="space-y-3 bg-inset p-4 rounded-xl border border-outline-soft">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-600">
+                  <span className="text-xs font-bold uppercase tracking-wider text-content-muted">
                     Kalender
-                    <span className="ml-2 font-medium normal-case text-slate-500">
+                    <span className="ml-2 font-medium normal-case text-content-faint">
                       {calendarMonthLabel}
                     </span>
                   </span>
-                  <span className="text-[11px] text-slate-500">
+                  <span className="text-[11px] text-content-faint">
                     Klicka på en dag för att logga aktivitet
                   </span>
                 </div>
-                <div className="grid grid-cols-8 gap-1 text-center text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                <div className="grid grid-cols-8 gap-1 text-center text-[10px] font-bold uppercase tracking-wide text-content-fainter">
                   <span>V</span>
                   {["Sön", "Mån", "Tis", "Ons", "Tor", "Fre", "Lör"].map(
                     (day) => (
@@ -996,7 +996,7 @@ function Profile() {
                       return (
                         <div
                           key={`week-${index}`}
-                          className="flex min-h-14 items-center justify-center rounded-lg bg-slate-100 text-[10px] font-bold text-slate-500"
+                          className="flex min-h-14 items-center justify-center rounded-lg bg-inset text-[10px] font-bold text-content-faint"
                         >
                           {cell.weekNumber ? `V${cell.weekNumber}` : ""}
                         </div>
@@ -1026,14 +1026,14 @@ function Profile() {
                       return (
                         <div
                           key={date}
-                          className="min-h-14 rounded-lg border border-blue-300 bg-blue-50 p-1"
+                          className="min-h-14 rounded-lg border border-accent-soft-border bg-accent-soft p-1"
                         >
                           {monthLabel && (
-                            <span className="block truncate text-[9px] font-bold capitalize text-blue-700">
+                            <span className="block truncate text-[9px] font-bold capitalize text-accent-soft-text">
                               {monthLabel}
                             </span>
                           )}
-                          <span className="block text-xs font-bold text-blue-900">
+                          <span className="block text-xs font-bold text-accent-soft-text">
                             {dayNumber}
                           </span>
                           <input
@@ -1043,21 +1043,21 @@ function Profile() {
                             onChange={(event) =>
                               setEditingCalendarAmount(event.target.value)
                             }
-                            className="w-full rounded border border-blue-200 px-1 py-0.5 text-[10px] text-slate-900"
+                            className="w-full rounded border border-accent-soft-border px-1 py-0.5 text-[10px] text-content"
                             autoFocus
                           />
                           <div className="mt-1 flex gap-1">
                             <button
                               type="button"
                               onClick={handleUpdateCalendarLog}
-                              className="flex-1 rounded bg-emerald-600 px-1 py-0.5 text-[10px] font-bold text-white"
+                              className="flex-1 rounded bg-success-strong px-1 py-0.5 text-[10px] font-bold text-white"
                             >
                               Spara
                             </button>
                             <button
                               type="button"
                               onClick={() => setEditingCalendarDate(null)}
-                              className="rounded bg-white px-1 py-0.5 text-[10px] font-bold text-slate-500"
+                              className="rounded bg-raised px-1 py-0.5 text-[10px] font-bold text-content-faint"
                             >
                               X
                             </button>
@@ -1080,17 +1080,17 @@ function Profile() {
                         }}
                         className={`min-h-14 rounded-lg border p-1 text-left transition-colors ${
                           loggedAmount > 0
-                            ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+                            ? "border-success-soft-border bg-success-soft text-success-soft-text"
                             : isToday
-                              ? "border-blue-300 bg-blue-50 text-blue-900"
+                              ? "border-accent-soft-border bg-accent-soft text-accent-soft-text"
                               : isFuture
-                                ? "border-slate-100 bg-white text-slate-300"
-                                : "border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:bg-blue-50"
+                                ? "border-outline-soft bg-raised text-content-fainter"
+                                : "border-outline bg-raised text-content-muted hover:border-accent-soft-border hover:bg-accent-soft"
                         } disabled:cursor-not-allowed`}
                         title={`${date}${loggedAmount > 0 ? `: ${loggedAmount} reps` : ": lägg till reps"}`}
                       >
                         {monthLabel && (
-                          <span className="block truncate text-[9px] font-bold capitalize text-slate-500">
+                          <span className="block truncate text-[9px] font-bold capitalize text-content-faint">
                             {monthLabel}
                           </span>
                         )}
@@ -1106,13 +1106,13 @@ function Profile() {
                     );
                   })}
                 </div>
-                <div className="flex flex-wrap gap-3 text-[11px] text-slate-500">
+                <div className="flex flex-wrap gap-3 text-[11px] text-content-faint">
                   <span className="flex items-center gap-1">
-                    <span className="h-2.5 w-2.5 rounded-sm bg-emerald-200" />
+                    <span className="h-2.5 w-2.5 rounded-sm bg-success-soft-border" />
                     Loggad
                   </span>
                   <span className="flex items-center gap-1">
-                    <span className="h-2.5 w-2.5 rounded-sm bg-blue-200" />
+                    <span className="h-2.5 w-2.5 rounded-sm bg-accent-soft-border" />
                     Idag
                   </span>
                 </div>
@@ -1123,19 +1123,19 @@ function Profile() {
       </div>
 
       {showCancelDialog && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/50 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl space-y-5">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-raised p-6 shadow-xl space-y-5">
             <div>
-              <h3 className="text-lg font-bold text-slate-900">
+              <h3 className="text-lg font-bold text-content">
                 Avbryt challenge?
               </h3>
-              <p className="mt-2 text-sm text-slate-600">
+              <p className="mt-2 text-sm text-content-muted">
                 Ditt deltagande och alla loggade reps för challengen tas bort.
                 Detta går inte att ångra.
               </p>
             </div>
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+              <label className="block text-xs font-bold uppercase tracking-wider text-content-muted mb-1.5">
                 Skriv &quot;Jag skäms&quot; för att bekräfta
               </label>
               <input
@@ -1143,11 +1143,11 @@ function Profile() {
                 value={cancelPhrase}
                 onChange={(event) => setCancelPhrase(event.target.value)}
                 autoFocus
-                className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-100"
+                className="w-full px-3 py-2 border border-outline rounded-xl text-sm outline-none focus:border-danger focus:ring-2 focus:ring-danger-soft-border"
               />
             </div>
             {cancelMessage && (
-              <p className="text-xs font-medium text-rose-600">
+              <p className="text-xs font-medium text-danger">
                 {cancelMessage}
               </p>
             )}
@@ -1155,7 +1155,7 @@ function Profile() {
               <button
                 type="button"
                 onClick={() => setShowCancelDialog(false)}
-                className="flex-1 rounded-xl border border-slate-200 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+                className="flex-1 rounded-xl border border-outline py-2 text-sm font-semibold text-content-muted hover:bg-inset"
               >
                 Behåll challenge
               </button>
@@ -1166,7 +1166,7 @@ function Profile() {
                   cancelLoading ||
                   cancelPhrase.trim().toLocaleLowerCase("sv-SE") !== "jag skäms"
                 }
-                className="flex-1 rounded-xl bg-rose-600 py-2 text-sm font-semibold text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex-1 rounded-xl bg-danger py-2 text-sm font-semibold text-white hover:bg-danger-strong disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {cancelLoading ? "Avbryter..." : "Avbryt challenge"}
               </button>
@@ -1176,12 +1176,12 @@ function Profile() {
       )}
 
       {historicalChallenges.length > 0 && (
-        <section className="space-y-4 border-t border-slate-100 pt-6">
+        <section className="space-y-4 border-t border-outline-soft pt-6">
           <div>
-            <h3 className="text-lg font-bold text-slate-900 tracking-tight">
+            <h3 className="text-lg font-bold text-content tracking-tight">
               Tidigare challenges
             </h3>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-content-faint mt-1">
               Dina tidigare deltaganden, endast för visning.
             </p>
           </div>
@@ -1189,42 +1189,42 @@ function Profile() {
             {historicalChallenges.map((challenge) => (
               <article
                 key={challenge.challengeId}
-                className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3"
+                className="rounded-xl border border-outline bg-inset p-4 space-y-3"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <h4 className="font-bold text-slate-900">
+                    <h4 className="font-bold text-content">
                       {challenge.title}
                     </h4>
-                    <p className="text-xs text-slate-500 mt-1">
+                    <p className="text-xs text-content-faint mt-1">
                       Avklarad{" "}
                       {new Date(challenge.completedAt).toLocaleDateString(
                         "sv-SE",
                       )}
                     </p>
                   </div>
-                  <span className="shrink-0 text-xs px-2 py-1 rounded-full bg-amber-100 text-amber-800 font-bold">
+                  <span className="shrink-0 text-xs px-2 py-1 rounded-full bg-warning-soft text-warning-soft-text font-bold">
                     +{challenge.earnedPoints} / {challenge.points} XP
                   </span>
                   {challenge.placement && challenge.placement <= 3 && (
-                    <span className="shrink-0 text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 font-bold">
+                    <span className="shrink-0 text-xs px-2 py-1 rounded-full bg-warning-soft text-warning-soft-text font-bold">
                       {["🥇", "🥈", "🥉"][challenge.placement - 1]}{" "}
                       {challenge.placement}:a plats av{" "}
                       {challenge.participantCount}
                     </span>
                   )}
                 </div>
-                <p className="text-sm text-slate-600">
+                <p className="text-sm text-content-muted">
                   {challenge.description}
                 </p>
-                <p className="text-xs font-semibold text-slate-700">
+                <p className="text-xs font-semibold text-content-secondary">
                   Vald nivå: {challenge.chosenTier}
                 </p>
-                <div className="flex items-center justify-between gap-3 border-t border-slate-200 pt-3">
-                  <span className="text-sm font-bold text-slate-900">
+                <div className="flex items-center justify-between gap-3 border-t border-outline pt-3">
+                  <span className="text-sm font-bold text-content">
                     Resultat: {challenge.totalAmount} / {challenge.chosenTier}
                   </span>
-                  <span className="text-xs font-bold text-emerald-700">
+                  <span className="text-xs font-bold text-success-strong">
                     {calculateProgressPercent(
                       challenge.totalAmount,
                       challenge.chosenTier,
@@ -1232,7 +1232,7 @@ function Profile() {
                     %
                   </span>
                   {challenge.placement && challenge.placement > 3 && (
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-content-faint">
                       Plats {challenge.placement} av{" "}
                       {challenge.participantCount}
                     </p>
@@ -1245,8 +1245,8 @@ function Profile() {
       )}
 
       {/* Profilinställningar */}
-      <div className="space-y-4 border-t border-slate-100 pt-6">
-        <h3 className="text-lg font-bold text-slate-900 tracking-tight">
+      <div className="space-y-4 border-t border-outline-soft pt-6">
+        <h3 className="text-lg font-bold text-content tracking-tight">
           Profilinställningar
         </h3>
         <form onSubmit={handleUpdateProfile} className="space-y-3">
@@ -1255,27 +1255,27 @@ function Profile() {
               type="text"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm"
+              className="w-full px-3 py-2 border border-outline rounded-xl text-sm"
               placeholder="Namn"
             />
             <input
               type="text"
               value={alias}
               onChange={(e) => setAlias(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm"
+              className="w-full px-3 py-2 border border-outline rounded-xl text-sm"
               placeholder="Alias"
             />
           </div>
           <button
             type="submit"
             disabled={profileLoading}
-            className="bg-slate-900 hover:bg-slate-800 text-white font-medium py-2 px-4 rounded-xl text-xs"
+            className="bg-btn hover:bg-btn-hover text-on-btn font-medium py-2 px-4 rounded-xl text-xs"
           >
             {profileLoading ? "Sparar..." : "Spara profil"}
           </button>
         </form>
         {profileMessage && (
-          <div className="p-3 text-xs bg-emerald-50 text-emerald-800 rounded-xl font-medium">
+          <div className="p-3 text-xs bg-success-soft text-success-soft-text rounded-xl font-medium">
             {profileMessage}
           </div>
         )}
