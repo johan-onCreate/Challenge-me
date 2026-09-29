@@ -44,4 +44,26 @@ describe("StatsDashboard", () => {
 
     expect(html).toContain("Ingen aktivitet ännu");
   });
+
+  it("renders an empty state when challenges exist but nothing is logged", () => {
+    const html = renderToString(
+      <StatsDashboard
+        data={calculateStats(
+          [],
+          [
+            {
+              challengeId: 1,
+              title: "Squat-utmaningen",
+              points: 100,
+              chosenTier: "200",
+              totalAmount: 0,
+            },
+          ],
+          "2026-01-07",
+        )}
+      />,
+    );
+
+    expect(html).toContain("Ingen aktivitet ännu");
+  });
 });

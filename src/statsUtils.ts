@@ -49,6 +49,17 @@ export interface StatsData {
 
 const DAY_MS = 86_400_000;
 
+export function toLocalDateKey(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+export function toDateKey(value: string): string {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return toLocalDateKey(date);
+}
+
 export function toDateMs(dateKey: string): number {
   return new Date(`${dateKey}T00:00:00Z`).getTime();
 }
@@ -60,7 +71,8 @@ export function fromDateMs(ms: number): string {
 export function sumTotalsByDate(logs: ChallengeLog[]): Map<string, number> {
   const totals = new Map<string, number>();
   logs.forEach((log) => {
-    totals.set(log.loggedAt, (totals.get(log.loggedAt) || 0) + log.amount);
+    const day = toDateKey(log.loggedAt);
+    totals.set(day, (totals.get(day) || 0) + log.amount);
   });
   return totals;
 }
@@ -74,14 +86,12 @@ export function calculateStreaks(
   let longest = 0;
   let run = 0;
   let previous: number | null = null;
-  [...dates]
-    .sort()
-    .forEach((date) => {
-      const ms = toDateMs(date);
-      run = previous !== null && ms - previous === DAY_MS ? run + 1 : 1;
-      longest = Math.max(longest, run);
-      previous = ms;
-    });
+  [...dates].sort().forEach((date) => {
+    const ms = toDateMs(date);
+    run = previous !== null && ms - previous === DAY_MS ? run + 1 : 1;
+    longest = Math.max(longest, run);
+    previous = ms;
+  });
 
   let current = 0;
   let cursor = toDateMs(today);
@@ -141,10 +151,7 @@ export function calculateStats(
 ): StatsData {
   const dailyTotals = sumTotalsByDate(logs);
   const totalReps = [...dailyTotals.values()].reduce((sum, n) => sum + n, 0);
-  const { current, longest } = calculateStreaks(
-    [...dailyTotals.keys()],
-    today,
-  );
+  const { current, longest } = calculateStreaks([...dailyTotals.keys()], today);
   const loggedDays = dailyTotals.size;
   const bestDay = [...dailyTotals.entries()].reduce<{
     date: string;

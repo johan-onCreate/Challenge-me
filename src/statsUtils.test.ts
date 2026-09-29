@@ -6,7 +6,21 @@ import {
   calculateStreaks,
   getIsoWeekMonday,
   sumTotalsByDate,
+  toDateKey,
+  toLocalDateKey,
 } from "./statsUtils";
+
+describe("toDateKey", () => {
+  it("keeps plain date keys unchanged", () => {
+    expect(toDateKey("2026-01-05")).toBe("2026-01-05");
+  });
+
+  it("converts full ISO timestamps to local date keys", () => {
+    expect(toDateKey("2026-01-05T22:30:00.000Z")).toBe(
+      toLocalDateKey(new Date("2026-01-05T22:30:00.000Z")),
+    );
+  });
+});
 
 describe("sumTotalsByDate", () => {
   it("adds up amounts logged on the same day", () => {
@@ -147,6 +161,28 @@ describe("calculateStats", () => {
     expect(stats.dailySeries).toEqual([]);
     expect(stats.weeklySeries).toEqual([]);
     expect(stats.challengeSeries).toEqual([]);
+  });
+
+  it("aggregates by calendar day when logs carry full ISO timestamps", () => {
+    const stats = calculateStats(
+      [
+        { challengeId: 1, amount: 10, loggedAt: "2026-01-05T08:30:00.000Z" },
+        { challengeId: 1, amount: 5, loggedAt: "2026-01-05T21:15:00.000Z" },
+        { challengeId: 1, amount: 8, loggedAt: "2026-01-06T09:00:00.000Z" },
+      ],
+      [],
+      toLocalDateKey(new Date("2026-01-06T12:00:00Z")),
+    );
+
+    expect(stats.loggedDays).toBe(2);
+    expect(stats.currentStreak).toBe(2);
+    expect(stats.longestStreak).toBe(2);
+    expect(stats.dailySeries).toHaveLength(2);
+    expect(stats.weeklySeries).toHaveLength(1);
+    expect(stats.bestDay).toEqual({
+      date: toLocalDateKey(new Date("2026-01-05T08:30:00.000Z")),
+      amount: 15,
+    });
   });
 
   it("ignores points when no tier was chosen", () => {

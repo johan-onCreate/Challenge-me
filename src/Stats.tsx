@@ -16,14 +16,38 @@ import {
   ChallengeSummary,
   StatsData,
   calculateStats,
+  toLocalDateKey,
 } from "./statsUtils";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-const toLocalDateKey = (date: Date) =>
-  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+const SWEDISH_MONTHS = [
+  "jan",
+  "feb",
+  "mars",
+  "apr",
+  "maj",
+  "jun",
+  "jul",
+  "aug",
+  "sep",
+  "okt",
+  "nov",
+  "dec",
+];
+
+const formatShortDate = (dateKey: string) => {
+  const [, month, day] = dateKey.split("-").map(Number);
+  return `${day} ${SWEDISH_MONTHS[month - 1] ?? ""}`;
+};
+
+const weekEndKey = (weekStartKey: string) => {
+  const end = new Date(`${weekStartKey}T00:00:00Z`);
+  end.setUTCDate(end.getUTCDate() + 6);
+  return end.toISOString().slice(0, 10);
+};
 
 const shortDate = (dateKey: string) => dateKey.slice(5);
 
@@ -102,7 +126,7 @@ function SectionHeader({
 }
 
 export function StatsDashboard({ data }: { data: StatsData }) {
-  const hasActivity = data.totalReps > 0 || data.challengeCount > 0;
+  const hasActivity = data.totalReps > 0;
 
   if (!hasActivity) {
     return (
@@ -124,7 +148,7 @@ export function StatsDashboard({ data }: { data: StatsData }) {
   }
 
   const bestDayLabel = data.bestDay
-    ? `Bästa dag: ${data.bestDay.amount} (${new Date(data.bestDay.date).toLocaleDateString("sv-SE", { day: "numeric", month: "short" })})`
+    ? `Bästa dag: ${data.bestDay.amount} (${formatShortDate(data.bestDay.date)})`
     : undefined;
 
   const cards: Array<{ label: string; value: string; sub?: string }> = [
@@ -231,10 +255,7 @@ export function StatsDashboard({ data }: { data: StatsData }) {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-2.5">
-          <SectionHeader
-            title="Reps per vecka"
-            dotClass="bg-success"
-          />
+          <SectionHeader title="Reps per vecka" dotClass="bg-success" />
           <div className="h-64 w-full rounded-xl border border-outline-soft bg-inset/60 p-2 sm:p-3">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
@@ -261,12 +282,18 @@ export function StatsDashboard({ data }: { data: StatsData }) {
                 <Tooltip
                   content={
                     <ChartTooltip
-                      rows={(point) => [
-                        {
-                          text: `${point.amount} reps`,
-                          color: "var(--success)",
-                        },
-                      ]}
+                      rows={(point) => {
+                        const week = String(point.week);
+                        return [
+                          {
+                            text: `${point.amount} reps`,
+                            color: "var(--success)",
+                          },
+                          {
+                            text: `${formatShortDate(week)} – ${formatShortDate(weekEndKey(week))} ${week.slice(0, 4)}`,
+                          },
+                        ];
+                      }}
                     />
                   }
                 />
@@ -282,10 +309,7 @@ export function StatsDashboard({ data }: { data: StatsData }) {
         </div>
 
         <div className="space-y-2.5">
-          <SectionHeader
-            title="Poäng per challenge"
-            dotClass="bg-warning"
-          />
+          <SectionHeader title="Poäng per challenge" dotClass="bg-warning" />
           <div className="h-64 w-full rounded-xl border border-outline-soft bg-inset/60 p-2 sm:p-3">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
@@ -314,7 +338,6 @@ export function StatsDashboard({ data }: { data: StatsData }) {
                 <Tooltip
                   content={
                     <ChartTooltip
-                      label={undefined}
                       rows={(point) => [
                         { text: String(point.name) },
                         {
@@ -343,73 +366,115 @@ export function StatsDashboard({ data }: { data: StatsData }) {
 function Stats() {
   const [data, setData] = useState<StatsData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [retry, setRetry] = useState(0);
+
+  async function loadStats() {
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError) throw authError;
+    if (!user) throw new Error("Ingen inloggad användare");
+
+    const { data: userChallenges, error: userChallengesError } = await supabase
+      .from("user_challenges")
+      .select("challenge_id, chosen_tier")
+      .eq("user_id", user.id);
+    if (userChallengesError) throw userChallengesError;
+    const { data: challengeRows, error: challengeRowsError } = await supabase
+      .from("challenges")
+      .select("id, title, points");
+    if (challengeRowsError) throw challengeRowsError;
+    const { data: logs, error: logsError } = await supabase
+      .from("challenge_logs")
+      .select("challenge_id, amount, logged_at")
+      .eq("user_id", user.id);
+    if (logsError) throw logsError;
+
+    const challengeById = new Map(
+      (challengeRows || []).map((challenge) => [challenge.id, challenge]),
+    );
+    const totalsByChallenge = new Map<number, number>();
+    logs?.forEach((log) => {
+      totalsByChallenge.set(
+        log.challenge_id,
+        (totalsByChallenge.get(log.challenge_id) || 0) + log.amount,
+      );
+    });
+
+    const summaries: ChallengeSummary[] = (userChallenges || [])
+      .map((entry) => {
+        const challenge = challengeById.get(entry.challenge_id);
+        if (!challenge) return null;
+        return {
+          challengeId: challenge.id,
+          title: challenge.title,
+          points: challenge.points,
+          chosenTier: entry.chosen_tier || "",
+          totalAmount: totalsByChallenge.get(challenge.id) || 0,
+        };
+      })
+      .filter((entry): entry is ChallengeSummary => entry !== null);
+
+    const logEntries: ChallengeLog[] = (logs || []).map((log) => ({
+      challengeId: log.challenge_id,
+      amount: log.amount,
+      loggedAt: log.logged_at,
+    }));
+
+    return calculateStats(logEntries, summaries, toLocalDateKey(new Date()));
+  }
 
   useEffect(() => {
-    async function fetchStats() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
+    let cancelled = false;
 
-      const { data: userChallenges } = await supabase
-        .from("user_challenges")
-        .select("challenge_id, chosen_tier")
-        .eq("user_id", user.id);
-      const { data: challengeRows } = await supabase
-        .from("challenges")
-        .select("id, title, points");
-      const { data: logs } = await supabase
-        .from("challenge_logs")
-        .select("challenge_id, amount, logged_at")
-        .eq("user_id", user.id);
+    (async () => {
+      try {
+        const stats = await loadStats();
+        if (!cancelled) setData(stats);
+      } catch {
+        if (!cancelled) {
+          setError(
+            "Kunde inte hämta statistik. Kontrollera din anslutning och försök igen.",
+          );
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
 
-      const challengeById = new Map(
-        (challengeRows || []).map((challenge) => [challenge.id, challenge]),
-      );
-      const totalsByChallenge = new Map<number, number>();
-      logs?.forEach((log) => {
-        totalsByChallenge.set(
-          log.challenge_id,
-          (totalsByChallenge.get(log.challenge_id) || 0) + log.amount,
-        );
-      });
+    return () => {
+      cancelled = true;
+    };
+  }, [retry]);
 
-      const summaries: ChallengeSummary[] = (userChallenges || [])
-        .map((entry) => {
-          const challenge = challengeById.get(entry.challenge_id);
-          if (!challenge) return null;
-          return {
-            challengeId: challenge.id,
-            title: challenge.title,
-            points: challenge.points,
-            chosenTier: entry.chosen_tier || "",
-            totalAmount: totalsByChallenge.get(challenge.id) || 0,
-          };
-        })
-        .filter(
-          (entry): entry is ChallengeSummary => entry !== null,
-        );
-
-      const logEntries: ChallengeLog[] = (logs || []).map((log) => ({
-        challengeId: log.challenge_id,
-        amount: log.amount,
-        loggedAt: log.logged_at,
-      }));
-
-      setData(
-        calculateStats(logEntries, summaries, toLocalDateKey(new Date())),
-      );
-      setLoading(false);
-    }
-
-    fetchStats();
-  }, []);
+  const retryLoad = () => {
+    setLoading(true);
+    setError(null);
+    setRetry((count) => count + 1);
+  };
 
   if (loading) {
     return (
       <p className="text-sm text-content-fainter animate-pulse text-center py-6">
         Hämtar statistik...
       </p>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-10 space-y-3">
+        <p className="text-sm text-danger">{error}</p>
+        <button
+          type="button"
+          onClick={retryLoad}
+          className="text-xs bg-btn text-on-btn hover:bg-btn-hover px-3 py-1.5 font-medium rounded-lg transition-colors"
+        >
+          Försök igen
+        </button>
+      </div>
     );
   }
 
