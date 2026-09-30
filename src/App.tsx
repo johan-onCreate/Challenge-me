@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { createClient, User } from "@supabase/supabase-js";
 import { Link, Navigate, NavLink, Route, Routes } from "react-router-dom";
 import Register from "./Register";
@@ -10,6 +10,8 @@ import Profile from "./Profile";
 import AdminChallenges from "./AdminChallenges";
 import Leaderboard from "./Leaderboard";
 import ThemeSwitcher from "./ThemeSwitcher";
+
+const Stats = lazy(() => import("./Stats"));
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -120,6 +122,9 @@ function App() {
             <NavLink to="/profile" className={navigationClassName}>
               Min Utmaning
             </NavLink>
+            <NavLink to="/stats" className={navigationClassName}>
+              Statistik 📊
+            </NavLink>
             <NavLink to="/leaderboard" className={navigationClassName}>
               Topplista 🏆
             </NavLink>
@@ -156,6 +161,20 @@ function App() {
               element={protectedRoute(<ChangePassword />)}
             />
             <Route path="/profile" element={protectedRoute(<Profile />)} />
+            <Route
+              path="/stats"
+              element={protectedRoute(
+                <Suspense
+                  fallback={
+                    <p className="text-sm text-content-fainter animate-pulse text-center py-6">
+                      Laddar...
+                    </p>
+                  }
+                >
+                  <Stats />
+                </Suspense>,
+              )}
+            />
             <Route
               path="/leaderboard"
               element={protectedRoute(<Leaderboard />)}
