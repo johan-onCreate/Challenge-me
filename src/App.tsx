@@ -12,6 +12,7 @@ import Leaderboard from "./Leaderboard";
 import ThemeSwitcher from "./ThemeSwitcher";
 
 const Stats = lazy(() => import("./Stats"));
+const ChallengeRoom = lazy(() => import("./ChallengeRoom"));
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -192,6 +193,20 @@ function App() {
             <Route
               path="/leaderboard"
               element={protectedRoute(<Leaderboard />)}
+            />
+            <Route
+              path="/room/:challengeId"
+              element={protectedRoute(
+                <Suspense
+                  fallback={
+                    <p className="text-sm text-content-fainter animate-pulse text-center py-6">
+                      Laddar...
+                    </p>
+                  }
+                >
+                  <ChallengeRoom />
+                </Suspense>,
+              )}
             />
             <Route
               path="/admin"

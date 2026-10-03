@@ -1,4 +1,4 @@
-import { useState, FormEvent, useEffect } from "react";
+import { useState, FormEvent, useEffect, useCallback } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { getPasswordResetRedirectUrl } from "./authConfig";
 
@@ -19,6 +19,16 @@ interface UserProfile {
   full_name: string | null;
   alias: string | null;
   is_admin: boolean;
+}
+
+type AchievementCondition = "goal_percentage" | "daily_record";
+
+interface Achievement {
+  id: number;
+  name: string;
+  description: string;
+  condition_type: AchievementCondition;
+  condition_value: number | null;
 }
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -45,16 +55,49 @@ function AdminChallenges() {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [userMessage, setUserMessage] = useState<string>("");
   const [resettingUserId, setResettingUserId] = useState<string | null>(null);
+  const [achievementChallengeId, setAchievementChallengeId] =
+    useState<string>("");
+  const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [achievementName, setAchievementName] = useState("");
+  const [achievementDescription, setAchievementDescription] = useState("");
+  const [achievementCondition, setAchievementCondition] =
+    useState<AchievementCondition>("goal_percentage");
+  const [achievementValue, setAchievementValue] = useState("50");
+  const [achievementMessage, setAchievementMessage] = useState("");
+  const [savingAchievement, setSavingAchievement] = useState(false);
 
-  const fetchChallenges = async () => {
-    const { data } = await supabase
+  const fetchAchievements = useCallback(async (challengeId: string) => {
+    if (!challengeId) return;
+    const { data, error } = await supabase
+      .from("challenge_achievements")
+      .select("id, name, description, condition_type, condition_value")
+      .eq("challenge_id", Number(challengeId))
+      .order("id", { ascending: true });
+    if (error) {
+      setAchievementMessage(`Fel: ${error.message}`);
+      return;
+    }
+    setAchievements(data || []);
+  }, []);
+
+  const fetchChallenges = useCallback(async () => {
+    const { data, error } = await supabase
       .from("challenges")
       .select("*")
       .order("id", { ascending: false });
-    if (data) setChallenges(data);
-  };
+    if (error) {
+      setMessage(`Fel: ${error.message}`);
+      return;
+    }
+    if (data) {
+      setChallenges(data);
+      const selectedId = data[0] ? String(data[0].id) : "";
+      setAchievementChallengeId(selectedId);
+      await fetchAchievements(selectedId);
+    }
+  }, [fetchAchievements]);
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     const { data, error } = await supabase
       .from("profiles")
       .select("id, email, full_name, alias, is_admin")
@@ -65,12 +108,50 @@ function AdminChallenges() {
     } else if (data) {
       setUsers(data);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchChallenges();
     fetchUsers();
-  }, []);
+  }, [fetchChallenges, fetchUsers]);
+
+  const handleAddAchievement = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!achievementChallengeId) return;
+
+    setSavingAchievement(true);
+    setAchievementMessage("");
+    const { error } = await supabase.from("challenge_achievements").insert({
+      challenge_id: Number(achievementChallengeId),
+      name: achievementName.trim(),
+      description: achievementDescription.trim(),
+      condition_type: achievementCondition,
+      condition_value:
+        achievementCondition === "goal_percentage"
+          ? Number(achievementValue)
+          : null,
+    });
+    if (error) {
+      setAchievementMessage(`Fel: ${error.message}`);
+    } else {
+      setAchievementName("");
+      setAchievementDescription("");
+      setAchievementMessage("Achievementet har lagts till.");
+      fetchAchievements(achievementChallengeId);
+    }
+    setSavingAchievement(false);
+  };
+
+  const handleDeleteAchievement = async (achievementId: number) => {
+    const { error } = await supabase
+      .from("challenge_achievements")
+      .delete()
+      .eq("id", achievementId);
+    setAchievementMessage(
+      error ? `Fel: ${error.message}` : "Achievementet har tagits bort.",
+    );
+    if (!error) fetchAchievements(achievementChallengeId);
+  };
 
   const handleAddTier = () => {
     const trimmed = newTierInput.trim();
@@ -466,6 +547,149 @@ function AdminChallenges() {
           ))}
         </div>
       </div>
+
+      <section className="space-y-4 pt-4 border-t border-outline-soft">
+        <div>
+          <h4 className="font-bold text-sm text-content">
+            Administrera achievements
+          </h4>
+          <p className="text-xs text-content-muted mt-1">
+            Achievements låses upp automatiskt när villkoret uppfylls.
+          </p>
+        </div>
+        {challenges.length === 0 ? (
+          <p className="text-xs text-content-faint">
+            Skapa en utmaning innan du lägger till achievements.
+          </p>
+        ) : (
+          <>
+            <label className="block text-xs font-semibold text-content-muted">
+              Utmaning
+              <select
+                value={achievementChallengeId}
+                onChange={(event) => {
+                  setAchievementChallengeId(event.target.value)
+                  fetchAchievements(event.target.value)
+                }}
+                className="mt-1 w-full px-3 py-2 border border-outline rounded-lg text-sm bg-raised"
+              >
+                {challenges.map((challenge) => (
+                  <option key={challenge.id} value={challenge.id}>
+                    {challenge.title}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <form
+              onSubmit={handleAddAchievement}
+              className="space-y-3 bg-inset p-4 rounded-xl border border-outline-soft"
+            >
+              <input
+                type="text"
+                value={achievementName}
+                onChange={(event) => setAchievementName(event.target.value)}
+                placeholder="Namn, t.ex. Halvvägs!"
+                required
+                maxLength={100}
+                className="w-full px-3 py-2 border border-outline rounded-lg text-sm bg-raised"
+              />
+              <textarea
+                value={achievementDescription}
+                onChange={(event) =>
+                  setAchievementDescription(event.target.value)
+                }
+                placeholder="Beskrivning"
+                required
+                maxLength={500}
+                rows={2}
+                className="w-full px-3 py-2 border border-outline rounded-lg text-sm bg-raised"
+              />
+              <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2">
+                <select
+                  value={achievementCondition}
+                  onChange={(event) =>
+                    setAchievementCondition(
+                      event.target.value === "daily_record"
+                        ? "daily_record"
+                        : "goal_percentage",
+                    )
+                  }
+                  className="px-3 py-2 border border-outline rounded-lg text-sm bg-raised"
+                >
+                  <option value="goal_percentage">
+                    Procent av deltagarens valda mål
+                  </option>
+                  <option value="daily_record">
+                    Slå personligt dagsrekord
+                  </option>
+                </select>
+                {achievementCondition === "goal_percentage" && (
+                  <label className="flex items-center gap-2 text-xs text-content-muted">
+                    Målnivå %
+                    <input
+                      type="number"
+                      min="1"
+                      max="1000"
+                      value={achievementValue}
+                      onChange={(event) =>
+                        setAchievementValue(event.target.value)
+                      }
+                      required
+                      className="w-24 px-3 py-2 border border-outline rounded-lg text-sm bg-raised"
+                    />
+                  </label>
+                )}
+              </div>
+              <button
+                type="submit"
+                disabled={savingAchievement}
+                className="bg-accent hover:bg-accent-hover text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50"
+              >
+                {savingAchievement ? "Lägger till..." : "Lägg till achievement"}
+              </button>
+            </form>
+
+            {achievementMessage && (
+              <p
+                className={`text-xs font-medium ${achievementMessage.startsWith("Fel") ? "text-danger" : "text-success-strong"}`}
+              >
+                {achievementMessage}
+              </p>
+            )}
+
+            <div className="space-y-2">
+              {achievements.map((achievement) => (
+                <div
+                  key={achievement.id}
+                  className="flex items-start justify-between gap-3 bg-raised border border-outline-soft rounded-lg p-3"
+                >
+                  <div>
+                    <p className="text-sm font-semibold text-content">
+                      {achievement.name}
+                    </p>
+                    <p className="text-xs text-content-muted">
+                      {achievement.description}
+                    </p>
+                    <p className="text-[11px] text-content-faint mt-1">
+                      {achievement.condition_type === "goal_percentage"
+                        ? `${achievement.condition_value}% av valt mål`
+                        : "Nytt personligt dagsrekord"}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteAchievement(achievement.id)}
+                    className="shrink-0 text-xs text-danger hover:underline"
+                  >
+                    Ta bort
+                  </button>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </section>
     </div>
   );
 }

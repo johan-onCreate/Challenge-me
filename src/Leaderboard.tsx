@@ -40,6 +40,7 @@ function Leaderboard() {
   }>({});
   const [loading, setLoading] = useState<boolean>(true);
   const [challengeTitle, setChallengeTitle] = useState<string>("");
+  const [challengeId, setChallengeId] = useState<number | null>(null);
 
   useEffect(() => {
     async function fetchLeaderboardData() {
@@ -57,6 +58,7 @@ function Leaderboard() {
         setLoading(false);
         return;
       }
+      setChallengeId(activeChallenge.id);
       setChallengeTitle(activeChallenge.title);
 
       // 2. Hämta alla profiler för att kunna visa alias/namn
@@ -198,6 +200,14 @@ function Leaderboard() {
             {challengeTitle || "Ingen aktiv"}
           </span>
         </p>
+        {challengeId !== null && (
+          <Link
+            to={`/room/${challengeId}`}
+            className="mt-3 inline-flex rounded-lg bg-accent px-3 py-2 text-xs font-semibold text-white hover:bg-accent-hover"
+          >
+            Utmanings-chatt
+          </Link>
+        )}
       </div>
 
       {tierKeys.length === 0 ? (
