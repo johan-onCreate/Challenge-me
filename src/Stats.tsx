@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import {
   Area,
@@ -11,6 +11,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { useParams } from "react-router-dom";
 import {
   ChallengeLog,
   ChallengeSummary,
@@ -125,7 +126,13 @@ function SectionHeader({
   );
 }
 
-export function StatsDashboard({ data }: { data: StatsData }) {
+export function StatsDashboard({
+  data,
+  title = "Min statistik",
+}: {
+  data: StatsData;
+  title?: string;
+}) {
   const hasActivity = data.totalReps > 0;
 
   if (!hasActivity) {
@@ -133,10 +140,10 @@ export function StatsDashboard({ data }: { data: StatsData }) {
       <div className="space-y-6 animate-fade-in">
         <div>
           <h3 className="text-xl font-bold text-content tracking-tight">
-            Min statistik
+            {title}
           </h3>
           <p className="text-xs text-content-faint mt-0.5">
-            Översikt över alla dina utmaningar och aktivitet.
+            Översikt över alla utmaningar och aktivitet.
           </p>
         </div>
         <div className="text-center py-10 text-content-faint text-sm bg-inset rounded-xl border border-dashed border-outline">
@@ -174,10 +181,10 @@ export function StatsDashboard({ data }: { data: StatsData }) {
     <div className="space-y-6 animate-fade-in">
       <div>
         <h3 className="text-xl font-bold text-content tracking-tight">
-          Min statistik
+          {title}
         </h3>
         <p className="text-xs text-content-faint mt-0.5">
-          Översikt över alla dina utmaningar och aktivitet.
+          Översikt över alla utmaningar och aktivitet.
         </p>
       </div>
 
@@ -363,24 +370,40 @@ export function StatsDashboard({ data }: { data: StatsData }) {
   );
 }
 
-function Stats() {
+function StatsContent({ userId }: { userId?: string }) {
   const [data, setData] = useState<StatsData | null>(null);
+  const [title, setTitle] = useState("Min statistik");
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [retry, setRetry] = useState(0);
 
-  async function loadStats() {
+  const loadStats = useCallback(async () => {
     const {
       data: { user },
       error: authError,
     } = await supabase.auth.getUser();
     if (authError) throw authError;
     if (!user) throw new Error("Ingen inloggad användare");
+    const selectedUserId = userId || user.id;
+    let selectedTitle = "Min statistik";
+
+    if (selectedUserId !== user.id) {
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("alias, full_name")
+        .eq("id", selectedUserId)
+        .maybeSingle();
+      if (profileError) throw profileError;
+      if (!profile) throw new Error("Användaren hittades inte");
+      selectedTitle = `${
+        profile.alias || profile.full_name || "Användarens"
+      } statistik`;
+    }
 
     const { data: userChallenges, error: userChallengesError } = await supabase
       .from("user_challenges")
       .select("challenge_id, chosen_tier")
-      .eq("user_id", user.id);
+      .eq("user_id", selectedUserId);
     if (userChallengesError) throw userChallengesError;
     const { data: challengeRows, error: challengeRowsError } = await supabase
       .from("challenges")
@@ -389,7 +412,7 @@ function Stats() {
     const { data: logs, error: logsError } = await supabase
       .from("challenge_logs")
       .select("challenge_id, amount, logged_at")
-      .eq("user_id", user.id);
+      .eq("user_id", selectedUserId);
     if (logsError) throw logsError;
 
     const challengeById = new Map(
@@ -423,16 +446,22 @@ function Stats() {
       loggedAt: log.logged_at,
     }));
 
-    return calculateStats(logEntries, summaries, toLocalDateKey(new Date()));
-  }
+    return {
+      data: calculateStats(logEntries, summaries, toLocalDateKey(new Date())),
+      title: selectedTitle,
+    };
+  }, [userId]);
 
   useEffect(() => {
     let cancelled = false;
 
     (async () => {
       try {
-        const stats = await loadStats();
-        if (!cancelled) setData(stats);
+        const result = await loadStats();
+        if (!cancelled) {
+          setData(result.data);
+          setTitle(result.title);
+        }
       } catch {
         if (!cancelled) {
           setError(
@@ -447,7 +476,7 @@ function Stats() {
     return () => {
       cancelled = true;
     };
-  }, [retry]);
+  }, [loadStats, retry]);
 
   const retryLoad = () => {
     setLoading(true);
@@ -480,7 +509,12 @@ function Stats() {
 
   if (!data) return null;
 
-  return <StatsDashboard data={data} />;
+  return <StatsDashboard data={data} title={title} />;
+}
+
+function Stats() {
+  const { userId } = useParams<{ userId: string }>();
+  return <StatsContent key={userId || "current"} userId={userId} />;
 }
 
 export default Stats;

@@ -37,6 +37,14 @@ describe("StatsDashboard", () => {
     expect(html).toContain(">95<");
   });
 
+  it("uses the selected user's name as the stats heading", () => {
+    const html = renderToString(
+      <StatsDashboard data={mockData} title="Alex statistik" />,
+    );
+
+    expect(html).toContain("Alex statistik");
+  });
+
   it("renders an empty state without any activity", () => {
     const html = renderToString(
       <StatsDashboard data={calculateStats([], [], "2026-01-07")} />,

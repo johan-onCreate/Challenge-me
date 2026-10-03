@@ -10,6 +10,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { Link } from "react-router-dom";
 import { calculateTargetProgress } from "./leaderboardUtils";
 
 interface LeaderboardUser {
@@ -368,12 +369,18 @@ function Leaderboard() {
                             )}
                           </td>
                           <td className="py-3 px-4">
-                            <div className="font-bold text-content text-xs sm:text-sm">
-                              {leader.alias}
-                            </div>
-                            <div className="text-[11px] text-content-fainter">
-                              {leader.fullName}
-                            </div>
+                            <Link
+                              to={`/stats/${leader.userId}`}
+                              className="group inline-block rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                              aria-label={`Visa statistik för ${leader.alias}`}
+                            >
+                              <div className="font-bold text-content text-xs sm:text-sm group-hover:text-accent group-hover:underline">
+                                {leader.alias}
+                              </div>
+                              <div className="text-[11px] text-content-fainter group-hover:text-accent">
+                                {leader.fullName}
+                              </div>
+                            </Link>
                           </td>
                           <td className="py-3 px-4 text-right font-extrabold text-content text-sm sm:text-base">
                             {leader.totalAmount}{" "}

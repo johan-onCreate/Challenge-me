@@ -176,6 +176,20 @@ function App() {
               )}
             />
             <Route
+              path="/stats/:userId"
+              element={protectedRoute(
+                <Suspense
+                  fallback={
+                    <p className="text-sm text-content-fainter animate-pulse text-center py-6">
+                      Laddar...
+                    </p>
+                  }
+                >
+                  <Stats />
+                </Suspense>,
+              )}
+            />
+            <Route
               path="/leaderboard"
               element={protectedRoute(<Leaderboard />)}
             />
