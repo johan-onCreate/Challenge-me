@@ -44,11 +44,11 @@ INSERT INTO public.achievements (id, family, title, hint, emoji, goal, sort_orde
   ('reps.500',             'volume',  '500 and Counting',                    '500 totala reps',                      '💪',  NULL,    7),
   ('reps.1k',              'volume',  'The Reptile',                         '1 000 totala reps',                    '🦎',  NULL,    8),
   ('reps.5k',              'volume',  'The Dinosaur',                        '5 000 totala reps',                    '🦖',  NULL,    9),
-  ('ascent.bronze',        'ascent',  'Bronze: You Showed Up',               'Klart 1 000-målet',                    '🥉',  1000,    10),
-  ('ascent.silver',        'ascent',  'Silver: Decent, Honestly',            'Klart 3 333-målet',                    '🥈',  3333,    11),
-  ('ascent.gold',          'ascent',  'Gold: Okay, Respect',                 'Klart 6 666-målet',                    '🥇',  6666,    12),
-  ('ascent.platinum',      'ascent',  'Platinum: Absolutely Cooked',         'Klart 10 000-målet',                   '💎',  10000,   13),
-  ('ascent.mythic',        'ascent',  'Mythic: Who Even Are You',            '20 000 totala reps (samtliga nivåer)', '🐉',  20000,   14),
+  ('ascent.bronze',        'ascent',  'Bronze: You Showed Up',               '1 000 totala reps',                    '🥉',  1000,    10),
+  ('ascent.silver',        'ascent',  'Silver: Decent, Honestly',            '3 333 totala reps',                    '🥈',  3333,    11),
+  ('ascent.gold',          'ascent',  'Gold: Okay, Respect',                 '6 666 totala reps',                    '🥇',  6666,    12),
+  ('ascent.platinum',      'ascent',  'Platinum: Absolutely Cooked',         '10 000 totala reps',                   '💎',  10000,   13),
+  ('ascent.mythic',        'ascent',  'Mythic: Who Even Are You',            '20 000 totala reps',                   '🐉',  20000,   14),
   ('comp.plot_twist',      'comp',    'The Plot Twist',                      'Bottenhalvan i halvtid → topp 3 i mål','🎬',  NULL,    15),
   ('comp.three_week_tyrant','comp',   'Three-Week Tyrant',                   'Topp 3 i din grupp, tre veckor i rad', '👑',  NULL,    16),
   ('comp.throne',          'comp',    'Take the Throne',                     'Etta i din grupp när utmaningen slutar','🏰',  NULL,    17),
@@ -62,3 +62,12 @@ INSERT INTO public.achievements (id, family, title, hint, emoji, goal, sort_orde
   ('date.dec24',           'special', 'Santa''s Rep List',                   'Logga en dag den 24 december',         '🎅',  NULL,    25),
   ('day.monster',          'special', 'Monster Day',                         '250+ reps på en enda dag',             '🌋',  NULL,    26)
 ON CONFLICT (id) DO NOTHING;
+
+-- 4. SYNC: ascent-hintarna ändrades (ren volym, oavsett nivå).
+--    ON CONFLICT DO NOTHING ovan uppdaterar inte befintliga rader,
+--    så dessa UPDATE:er håller katalogen i databasen i synk. Idempotenta.
+UPDATE public.achievements SET hint = '1 000 totala reps'  WHERE id = 'ascent.bronze';
+UPDATE public.achievements SET hint = '3 333 totala reps'  WHERE id = 'ascent.silver';
+UPDATE public.achievements SET hint = '6 666 totala reps'  WHERE id = 'ascent.gold';
+UPDATE public.achievements SET hint = '10 000 totala reps' WHERE id = 'ascent.platinum';
+UPDATE public.achievements SET hint = '20 000 totala reps' WHERE id = 'ascent.mythic';

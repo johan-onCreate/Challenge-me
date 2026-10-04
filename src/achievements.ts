@@ -38,11 +38,11 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
   { id: "reps.500", family: "volume", title: "500 and Counting", hint: "500 totala reps", emoji: "💪", goal: null, sortOrder: 7 },
   { id: "reps.1k", family: "volume", title: "The Reptile", hint: "1 000 totala reps", emoji: "🦎", goal: null, sortOrder: 8 },
   { id: "reps.5k", family: "volume", title: "The Dinosaur", hint: "5 000 totala reps", emoji: "🦖", goal: null, sortOrder: 9 },
-  { id: "ascent.bronze", family: "ascent", title: "Bronze: You Showed Up", hint: "Klart 1 000-målet", emoji: "🥉", goal: 1000, sortOrder: 10 },
-  { id: "ascent.silver", family: "ascent", title: "Silver: Decent, Honestly", hint: "Klart 3 333-målet", emoji: "🥈", goal: 3333, sortOrder: 11 },
-  { id: "ascent.gold", family: "ascent", title: "Gold: Okay, Respect", hint: "Klart 6 666-målet", emoji: "🥇", goal: 6666, sortOrder: 12 },
-  { id: "ascent.platinum", family: "ascent", title: "Platinum: Absolutely Cooked", hint: "Klart 10 000-målet", emoji: "💎", goal: 10000, sortOrder: 13 },
-  { id: "ascent.mythic", family: "ascent", title: "Mythic: Who Even Are You", hint: "20 000 totala reps (samtliga nivåer)", emoji: "🐉", goal: 20000, sortOrder: 14 },
+  { id: "ascent.bronze", family: "ascent", title: "Bronze: You Showed Up", hint: "1 000 totala reps", emoji: "🥉", goal: 1000, sortOrder: 10 },
+  { id: "ascent.silver", family: "ascent", title: "Silver: Decent, Honestly", hint: "3 333 totala reps", emoji: "🥈", goal: 3333, sortOrder: 11 },
+  { id: "ascent.gold", family: "ascent", title: "Gold: Okay, Respect", hint: "6 666 totala reps", emoji: "🥇", goal: 6666, sortOrder: 12 },
+  { id: "ascent.platinum", family: "ascent", title: "Platinum: Absolutely Cooked", hint: "10 000 totala reps", emoji: "💎", goal: 10000, sortOrder: 13 },
+  { id: "ascent.mythic", family: "ascent", title: "Mythic: Who Even Are You", hint: "20 000 totala reps", emoji: "🐉", goal: 20000, sortOrder: 14 },
   { id: "comp.plot_twist", family: "comp", title: "The Plot Twist", hint: "Bottenhalvan i halvtid → topp 3 i mål", emoji: "🎬", goal: null, sortOrder: 15 },
   { id: "comp.three_week_tyrant", family: "comp", title: "Three-Week Tyrant", hint: "Topp 3 i din grupp, tre veckor i rad", emoji: "👑", goal: null, sortOrder: 16 },
   { id: "comp.throne", family: "comp", title: "Take the Throne", hint: "Etta i din grupp när utmaningen slutar", emoji: "🏰", goal: null, sortOrder: 17 },
@@ -381,20 +381,17 @@ export function evaluate(state: ChallengeState): ReadonlySet<string> {
   grant("reps.1k", state.totalReps >= 1000);
   grant("reps.5k", state.totalReps >= 5000);
 
-  // Ascent — ackumulativt: klart sitt nivåmål ger alla lägre trappsteg
-  if (state.chosenTier > 0 && state.totalReps >= state.chosenTier) {
-    ACHIEVEMENTS.forEach((badge) => {
-      if (
-        badge.family === "ascent" &&
-        badge.goal !== null &&
-        badge.goal <= state.chosenTier
-      ) {
-        earned.add(badge.id);
-      }
-    });
-  }
-  // Mythic ren volym — oberoende av nivå
-  grant("ascent.mythic", state.totalReps >= MYTHIC_TARGET);
+  // Ascent — ren volym: alla trappsteg går på totala reps, oavsett vald nivå.
+  // (Nivåbyten påverkar aldrig badgarna — och badgar tas aldrig ifrån.)
+  ACHIEVEMENTS.forEach((badge) => {
+    if (
+      badge.family === "ascent" &&
+      badge.goal !== null &&
+      state.totalReps >= badge.goal
+    ) {
+      earned.add(badge.id);
+    }
+  });
 
   // Tävlan (kräver grupp ≥ 2)
   const hasRealGroup = state.groupSize >= 2;
@@ -463,14 +460,12 @@ export function progressFor(
     case "ascent.bronze":
     case "ascent.silver":
     case "ascent.gold":
-    case "ascent.platinum": {
+    case "ascent.platinum":
+    case "ascent.mythic": {
       const goal = ACHIEVEMENT_BY_ID.get(id)?.goal;
-      // Endast utvalda nivå visar progress; övriga trappsteg är låsta
-      if (!goal || goal !== state.chosenTier) return null;
+      if (!goal) return null;
       return { kind: "count", current: state.totalReps, target: goal };
     }
-    case "ascent.mythic":
-      return { kind: "count", current: state.totalReps, target: MYTHIC_TARGET };
     case "perfect.run":
       return {
         kind: "text",

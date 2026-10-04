@@ -86,11 +86,11 @@ INSERT INTO public.achievements (id, family, title, hint, emoji, goal, sort_orde
   ('reps.500',        'volume',   '500 and Counting',               '500 totala reps',                        '💪', NULL,    7),
   ('reps.1k',         'volume',   'The Reptile',                    '1 000 totala reps',                      '🦎', NULL,    8),
   ('reps.5k',         'volume',   'The Dinosaur',                   '5 000 totala reps',                      '🦖', NULL,    9),
-  ('ascent.bronze',   'ascent',   'Bronze: You Showed Up',          'Klart 1 000-målet',                      '🥉', 1000,   10),
-  ('ascent.silver',   'ascent',   'Silver: Decent, Honestly',       'Klart 3 333-målet',                      '🥈', 3333,   11),
-  ('ascent.gold',     'ascent',   'Gold: Okay, Respect',            'Klart 6 666-målet',                      '🥇', 6666,   12),
-  ('ascent.platinum', 'ascent',   'Platinum: Absolutely Cooked',    'Klart 10 000-målet',                     '💎', 10000,  13),
-  ('ascent.mythic',   'ascent',   'Mythic: Who Even Are You',       '20 000 totala reps (samtliga nivåer)',   '🐉', 20000,  14),
+  ('ascent.bronze',   'ascent',   'Bronze: You Showed Up',          '1 000 totala reps',                      '🥉', 1000,   10),
+  ('ascent.silver',   'ascent',   'Silver: Decent, Honestly',       '3 333 totala reps',                      '🥈', 3333,   11),
+  ('ascent.gold',     'ascent',   'Gold: Okay, Respect',            '6 666 totala reps',                      '🥇', 6666,   12),
+  ('ascent.platinum', 'ascent',   'Platinum: Absolutely Cooked',    '10 000 totala reps',                     '💎', 10000,  13),
+  ('ascent.mythic',   'ascent',   'Mythic: Who Even Are You',       '20 000 totala reps',                     '🐉', 20000,  14),
   ('comp.plot_twist', 'comp',     'The Plot Twist',                 'Bottenhalvan i halvtid → topp 3 i mål',  '🎬', NULL,   15),
   ('comp.three_week_tyrant', 'comp', 'Three-Week Tyrant',           'Topp 3 i din grupp, tre veckor i rad',   '👑', NULL,   16),
   ('comp.throne',     'comp',     'Take the Throne',                'Etta i din grupp när utmaningen slutar', '🏰', NULL,   17),
@@ -158,9 +158,10 @@ export function progressFor(id: string, s: ChallengeState):
 | `troll.*`, `date.dec24` | `null` — hint only (that's the joke) |
 
 **Tests** (`src/achievements.test.ts`, following the existing `*.test.ts` pattern):
-- one test per family (thresholds, streak boundaries, cumulative ascent grant, mythic
-  tier-independence, trolling exact-match incl. the "day ended at N" policy, combo,
-  dec24 gate, comp guardrail groupSize < 2, windowComplete gating for end badges)
+- one test per family (thresholds, streak boundaries, ascent volume milestones
+  incl. tier-independence and exact boundaries, trolling exact-match incl. the
+  "day ended at N" policy, combo, dec24 gate, comp guardrail groupSize < 2,
+  windowComplete gating for end badges)
 - `progressFor` boundaries (0, mid, full, null cases)
 
 ---

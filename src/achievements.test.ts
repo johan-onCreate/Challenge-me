@@ -465,40 +465,51 @@ describe("evaluate", () => {
     expect(has(evaluate(makeState({ totalReps: 5000 })), "reps.5k")).toEqual([true]);
   });
 
-  it("grants ascent badges cumulatively when the chosen tier is completed", () => {
-    const state = makeState({ chosenTier: 10000, totalReps: 10000 });
+  it("grants ascent badges as pure volume milestones", () => {
+    const at1000 = evaluate(makeState({ totalReps: 1000 }));
     expect(
-      has(
-        evaluate(state),
-        "ascent.bronze",
-        "ascent.silver",
-        "ascent.gold",
-        "ascent.platinum",
-        "ascent.mythic",
-      ),
+      has(at1000, "ascent.bronze", "ascent.silver", "ascent.gold", "ascent.platinum", "ascent.mythic"),
+    ).toEqual([true, false, false, false, false]);
+
+    const at3333 = evaluate(makeState({ totalReps: 3333 }));
+    expect(
+      has(at3333, "ascent.bronze", "ascent.silver", "ascent.gold", "ascent.platinum"),
+    ).toEqual([true, true, false, false]);
+
+    const at6666 = evaluate(makeState({ totalReps: 6666 }));
+    expect(has(at6666, "ascent.bronze", "ascent.silver", "ascent.gold")).toEqual([
+      true,
+      true,
+      true,
+    ]);
+
+    const at10000 = evaluate(makeState({ totalReps: 10000 }));
+    expect(
+      has(at10000, "ascent.bronze", "ascent.silver", "ascent.gold", "ascent.platinum", "ascent.mythic"),
     ).toEqual([true, true, true, true, false]);
   });
 
-  it("does not grant ascent before the tier is completed", () => {
-    const state = makeState({ chosenTier: 10000, totalReps: 9999 });
+  it("respects exact ascent boundaries", () => {
+    expect(has(evaluate(makeState({ totalReps: 999 })), "ascent.bronze")).toEqual([false]);
+    expect(has(evaluate(makeState({ totalReps: 3332 })), "ascent.silver")).toEqual([false]);
+    expect(has(evaluate(makeState({ totalReps: 6665 })), "ascent.gold")).toEqual([false]);
+    expect(has(evaluate(makeState({ totalReps: 9999 })), "ascent.platinum")).toEqual([false]);
+    expect(has(evaluate(makeState({ totalReps: 19999 })), "ascent.mythic")).toEqual([false]);
+  });
+
+  it("grants ascent regardless of chosen tier (tier changes never cost badges)", () => {
+    expect(has(evaluate(makeState({ chosenTier: 0, totalReps: 1000 })), "ascent.bronze")).toEqual([
+      true,
+    ]);
     expect(
-      has(evaluate(state), "ascent.bronze", "ascent.silver", "ascent.gold", "ascent.platinum"),
-    ).toEqual([false, false, false, false]);
-  });
-
-  it("grants only the matching rung for a small tier", () => {
-    const state = makeState({ chosenTier: 1000, totalReps: 1000 });
-    expect(has(evaluate(state), "ascent.bronze", "ascent.silver")).toEqual([true, false]);
-  });
-
-  it("never grants ascent without a chosen tier", () => {
-    const state = makeState({ chosenTier: 0, totalReps: 99999 });
+      has(evaluate(makeState({ chosenTier: 3333, totalReps: 1000 })), "ascent.bronze"),
+    ).toEqual([true]);
     expect(
-      has(evaluate(state), "ascent.bronze", "ascent.silver", "ascent.gold", "ascent.platinum"),
-    ).toEqual([false, false, false, false]);
+      has(evaluate(makeState({ chosenTier: 1000, totalReps: 3333 })), "ascent.silver"),
+    ).toEqual([true]);
   });
 
-  it("grants mythic as pure volume, independent of tier", () => {
+  it("grants mythic as pure volume at 20 000 reps", () => {
     expect(
       has(evaluate(makeState({ chosenTier: 1000, totalReps: MYTHIC_TARGET })), "ascent.mythic"),
     ).toEqual([true]);
@@ -623,23 +634,28 @@ describe("progressFor", () => {
     });
   });
 
-  it("shows ascent progress only for the chosen tier", () => {
-    const small = makeState({ chosenTier: 1000, totalReps: 742 });
-    expect(progressFor("ascent.bronze", small)).toEqual({
+  it("shows ascent progress for every rung, independent of tier", () => {
+    const state = makeState({ chosenTier: 1000, totalReps: 742 });
+    expect(progressFor("ascent.bronze", state)).toEqual({
       kind: "count",
       current: 742,
       target: 1000,
     });
-    expect(progressFor("ascent.silver", small)).toBeNull();
-    expect(progressFor("ascent.platinum", small)).toBeNull();
-
-    const big = makeState({ chosenTier: 10000, totalReps: 742 });
-    expect(progressFor("ascent.platinum", big)).toEqual({
+    expect(progressFor("ascent.silver", state)).toEqual({
+      kind: "count",
+      current: 742,
+      target: 3333,
+    });
+    expect(progressFor("ascent.gold", state)).toEqual({
+      kind: "count",
+      current: 742,
+      target: 6666,
+    });
+    expect(progressFor("ascent.platinum", state)).toEqual({
       kind: "count",
       current: 742,
       target: 10000,
     });
-    expect(progressFor("ascent.bronze", big)).toBeNull();
   });
 
   it("always shows mythic progress", () => {

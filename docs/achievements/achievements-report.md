@@ -20,8 +20,9 @@
 - **The "Trolling family" is the secret weapon.** "Log *exactly* 1 rep" → **Lazy Sloth**. The app
   roasts you *and* rewards you for your worst days. That's the "laugh when you receive it" core.
 - **Streaks are the motivational spine** (7 → 14 → 21 → 30 → 60, escalating disbelief in the names).
-- **Ascent is per-goal and cumulative** (🥉 1,000 → 🥈 3,333 → 🥇 6,666 → 💎 10,000) — and
-  🐉 **Mythic (20,000) is live, not "later"**: a pure volume badge, no 20,000 tier needed.
+- **Ascent is pure volume, tier-independent** (🥉 1,000 → 🥈 3,333 → 🥇 6,666 → 💎 10,000 →
+  🐉 20,000 total reps): milestones are milestones no matter which tier you picked — changing
+  tier can never cost you a badge (and badges are never revoked).
 - **Personal Record is NOT an achievement** — it's a live stat on the Stats page (Section 5).
 - **Metrics: 9 now** — Dopamine, **Funny (new)**, Retention, Motivation, Social, Ease, Fit,
   Novelty, Longevity — each with a crisp definition (Section 2).
@@ -107,19 +108,20 @@ Comedy rule: the names escalate in disbelief as the streak gets bigger.
 
 > A little evolution arc: 500 → reptile → dinosaur. The names do the bragging for you.
 
-### 🪜 ASCENT FAMILY — per-goal, cumulative (5)
+### 🪜 ASCENT FAMILY — pure volume, tier-independent (5)
 
-Finish your chosen tier at 100%. Higher grants all lower (finish 10,000 ⇒ you also get
-6,666 / 3,333 / 1,000). **🐉 Mythic (20,000) is the exception — it's tier-independent:** no
-20,000 tier has to exist, you just have to *log* 20,000 total reps. Pure grind, no gate.
+Each rung is a **total-reps milestone**: 1,000 → 3,333 → 6,666 → 10,000 → 20,000. Your chosen
+tier is irrelevant — a 3,333-tier user with 1,500 reps has already earned 🥉 Bronze, and
+changing tier can never cost a badge (the new rule is a strict superset of the old one, so
+nothing earned under the old rule is lost; badges are never revoked).
 
 | ID | Name | Rule | D | F | R | M | S | E | G | N | L | **Score** |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `ascent.bronze` | 🥉 **Bronze: You Showed Up** | Finish a 1,000-rep goal | 7 | 6 | 7 | 7 | 4 | 9 | 10 | 4 | 7 | **7.00** |
-| `ascent.silver` | 🥈 **Silver: Decent, Honestly** | Finish a 3,333-rep goal | 7 | 7 | 7 | 8 | 4 | 9 | 10 | 5 | 7 | **7.30** |
-| `ascent.gold` | 🥇 **Gold: Okay, Respect** | Finish a 6,666-rep goal | 8 | 7 | 8 | 8 | 5 | 9 | 10 | 5 | 8 | **7.75** |
-| `ascent.platinum` | 💎 **Platinum: Absolutely Cooked** | Finish a 10,000-rep goal | 10 | 8 | 9 | 10 | 8 | 8 | 10 | 6 | 9 | **8.80** |
-| `ascent.mythic` | 🐉 **Mythic: Who Even Are You** | 20,000 total reps *(tier-independent — no 20k tier needed)* | 10 | 9 | 9 | 10 | 9 | 8 | 9 | 9 | 10 | **9.15** |
+| `ascent.bronze` | 🥉 **Bronze: You Showed Up** | 1,000 total reps | 7 | 6 | 7 | 7 | 4 | 9 | 10 | 4 | 7 | **7.00** |
+| `ascent.silver` | 🥈 **Silver: Decent, Honestly** | 3,333 total reps | 7 | 7 | 7 | 8 | 4 | 9 | 10 | 5 | 7 | **7.30** |
+| `ascent.gold` | 🥇 **Gold: Okay, Respect** | 6,666 total reps | 8 | 7 | 8 | 8 | 5 | 9 | 10 | 5 | 8 | **7.75** |
+| `ascent.platinum` | 💎 **Platinum: Absolutely Cooked** | 10,000 total reps | 10 | 8 | 9 | 10 | 8 | 8 | 10 | 6 | 9 | **8.80** |
+| `ascent.mythic` | 🐉 **Mythic: Who Even Are You** | 20,000 total reps | 10 | 9 | 9 | 10 | 9 | 8 | 9 | 9 | 10 | **9.15** |
 
 ### 🏟️ COMPETITION FAMILY — "your tier group is the arena" (3)
 
@@ -231,22 +233,21 @@ Both keep the "my best day" dopamine; neither feels broken.
 | Family | Goal tier is… |
 |---|---|
 | 📅 Streaks / 🧘 Metronome / 💪 Volume / 🌪️ Combo / 🌋 Monster Day / ⭐ Baby XP / 🎅 Santa / 🐒 Trolling | **Ignored.** A 1,000-goal user and a 10,000-goal user play the exact same streak, volume, trolling and special games. |
-| 🪜 Ascent | **The badge itself** — one rung per goal, cumulative (higher ⇒ lower) — *except Mythic*, which is pure volume: 20,000 total reps, no tier needed. |
+| 🪜 Ascent | **Pure volume** — each rung is a total-reps milestone (1,000 → 3,333 → 6,666 → 10,000 → 20,000), completely tier-independent. |
 | 🏟️ Competition | **Your lane** — judged inside your tier group, so every goal level has its own throne to take. |
 
 **Reachability per starting goal (of 26):**
 
-| Start at | Not goal-locked | Lifetime max (climb tiers over the run/next runs) |
+| Start at | Not goal-locked | Lifetime max |
 |---|---|---|
-| 🥉 1,000 | 23 | **26** ✅ |
-| 🥈 3,333 | 24 | **26** ✅ |
-| 🥇 6,666 | 25 | **26** ✅ |
-| 💎 10,000 | 26 | **26** ✅ |
+| 🥉 1,000 | **26** ✅ | **26** ✅ |
+| 🥈 3,333 | **26** ✅ | **26** ✅ |
+| 🥇 6,666 | **26** ✅ | **26** ✅ |
+| 💎 10,000 | **26** ✅ | **26** ✅ |
 
-Because Ascent is **cumulative**, **Mythic is pure volume** (20,000 total reps, no tier needed),
-and everything else is tier-agnostic, **every player can reach 26/26** — nobody's wall has a
-"not for you" slot. (Within a single run, only the Ascent rungs *above* your chosen tier are out
-of reach — pick a bigger tier next run, or just grind for Mythic.)
+Because Ascent is now **pure volume** and everything else is tier-agnostic, **every player can
+reach 26/26 from any starting tier** — nobody's wall has a "not for you" slot. The only "lock"
+left is reps: higher rungs need more total reps, not a bigger goal.
 
 ---
 
@@ -326,12 +327,8 @@ export function evaluate(s: ChallengeState): Set<string> {
   ok('reps.1k',  s.totalReps >= 1000);
   ok('reps.5k',  s.totalReps >= 5000);
 
-  // 🪜 ASCENT (cumulative: finishing your tier grants every rung below it)
-  if (s.totalReps >= s.chosenTier) {
-    const top = s.chosenTier;
-    Object.entries(ASCENT).forEach(([g, id]) => { if (Number(g) <= top) out.add(id); });
-  }
-  ok('ascent.mythic', s.totalReps >= 20000);  // tier-independent: pure grind, no 20k tier needed
+  // 🪜 ASCENT (pure volume: each rung is a total-reps milestone, tier-independent)
+  Object.entries(ASCENT).forEach(([g, id]) => { if (s.totalReps >= Number(g)) out.add(id); });
 
   // 🏟️ COMPETITION (tier group, ≥2 people)
   const real = s.groupSize >= 2;
@@ -374,7 +371,7 @@ async function sync(userId: string, challengeId: number, nowSatisfied: Set<strin
 ```
 
 **Triggers:** after each log upsert (`handleLogDailyProgress` / `handleUpdateCalendarLog`) ·
-on challenge end (Metronome, Throne, Plot Twist, Ascent final) · on Profile mount (reconciliation).
+on challenge end (Metronome, Throne, Plot Twist) · on Profile mount (reconciliation).
 
 **Why it's smooth:** no N+1 (one `evaluate()` over in-memory rows) · idempotent (PK +
 `onConflict`) · celebration only for *new* unlocks · self-healing on load · a new badge = one
@@ -426,6 +423,7 @@ on challenge end (Metronome, Throne, Plot Twist, Ascent final) · on Profile mou
 | 8 | (v3.6) Final scoring of all 26 on 9 metrics, ranking, edge-case policy (final day total), build waves | Shippable. |
 | 9 | (v3.7) Full score audit — recomputed every composite by hand; fixed 5 arithmetic errors (Imp 9.25, Mythic 9.15, Reptile 7.90, Silver 7.30, Santa 7.55); Baby XP added to ranking; set count corrected to 26 everywhere | Numbers now check out. |
 | 10 | (v3.8) **Monster Day threshold 50 → 250+** (rescored 8.40 → 8.80, up to #5); **Mythic activated** — tier-independent volume badge (20,000 total reps, no 20k tier needed); reachability table updated; build wave W4 folded into W3 | Owner-approved set is final. |
+| 11 | (v3.9) **Ascent simplified to pure volume** — all 5 rungs (1,000 → 20,000) are total-reps milestones, tier-independent; changing tier can never cost a badge (new rule is a strict superset of the old); hints updated ("N totala reps"); all rungs show live progress on the wall | Simpler engine, better UX, zero data impact. |
 
 ---
 
@@ -451,7 +449,7 @@ on challenge end (Metronome, Throne, Plot Twist, Ascent final) · on Profile mou
 - [ ] 🥈 `ascent.silver` — Decent, Honestly (3,333)
 - [ ] 🥇 `ascent.gold` — Okay, Respect (6,666)
 - [ ] 💎 `ascent.platinum` — Absolutely Cooked (10,000)
-- [ ] 🐉 `ascent.mythic` — Who Even Are You (20,000 total reps, no tier needed)
+- [ ] 🐉 `ascent.mythic` — Who Even Are You (20,000 total reps)
 
 **🏟️ Competition (3):**
 - [ ] 🎬 `comp.plot_twist` — The Plot Twist
@@ -489,4 +487,5 @@ on challenge end (Metronome, Throne, Plot Twist, Ascent final) · on Profile mou
 - **Integration:** 2 tables (+`challenge_id`), one pure `evaluate()` over data you already load,
   idempotent upsert, confetti only for new unlocks, reconciliation on load. Trolling badges cost
   one `includes(N)` each.
-- **Mythic is live, not later** — 20,000 total reps, no 20,000 tier needed. One seed row.
+- **Ascent is pure volume, tier-independent** — all 5 rungs (1,000 → 20,000) are total-reps
+  milestones; changing tier can never cost a badge. One seed row per badge.
