@@ -6,16 +6,14 @@ import {
   TOTAL_BADGES,
   buildChallengeState,
   buildWallBadges,
-  evaluate,
   type Achievement,
   type TierParticipant,
   type WallBadge,
 } from "../achievements";
 import { toLocalDateKey, toDateKey } from "../statsUtils";
 import {
-  fetchOwnedAchievements,
-  grantAchievements,
   markAchievementsSeen,
+  reconcileAchievements,
 } from "../useAchievementSync";
 import { BadgeCard } from "./BadgeCard";
 import { burstConfetti } from "../confetti";
@@ -40,8 +38,8 @@ interface WallData {
 
 /**
  * Hämtar allt väggdatabasbehov i tre parallella frågor, bygger
- * ChallengeState, samordnar (idempotent upsert av saknade badgar)
- * och mappar till väggkort.
+ * ChallengeState, samordnar fullt (beviljar saknade + tar bort
+ * badgar som inte längre uppfylls) och mappar till väggkort.
  */
 async function loadWallData(
   userId: string,
@@ -99,21 +97,15 @@ async function loadWallData(
     tierParticipants: participants,
   });
 
-  const owned = await fetchOwnedAchievements(supabase, userId, challenge.id);
-  const ownedIds = new Set(owned.map((entry) => entry.achievementId));
-  const fresh = [...evaluate(state)].filter((id) => !ownedIds.has(id));
-  // Samordning är idempotent — fungerar för både egen och andras vägg
-  if (fresh.length > 0) {
-    await grantAchievements(supabase, userId, challenge.id, fresh);
-  }
-  const merged = [
-    ...owned,
-    ...fresh.map((id) => ({
-      achievementId: id,
-      unlockedAt: new Date().toISOString(),
-      seenAt: null,
-    })),
-  ];
+  // Full samordning: beviljar nya badgar OCH tar bort sådana som inte
+  // längre uppfylls — väggen speglar alltid användarens aktuella data.
+  // Idempotent och scoped till den visa användaren (egen eller andras vägg).
+  const { owned: merged } = await reconcileAchievements(
+    supabase,
+    userId,
+    challenge.id,
+    state,
+  );
 
   const unseen = merged
     .filter((entry) => entry.seenAt === null)

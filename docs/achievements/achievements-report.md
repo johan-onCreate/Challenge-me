@@ -22,7 +22,7 @@
 - **Streaks are the motivational spine** (7 → 14 → 21 → 30 → 60, escalating disbelief in the names).
 - **Ascent is pure volume, tier-independent** (🥉 1,000 → 🥈 3,333 → 🥇 6,666 → 💎 10,000 →
   🐉 20,000 total reps): milestones are milestones no matter which tier you picked — changing
-  tier can never cost you a badge (and badges are never revoked).
+  tier can never cost you a badge.
 - **Personal Record is NOT an achievement** — it's a live stat on the Stats page (Section 5).
 - **Metrics: 9 now** — Dopamine, **Funny (new)**, Retention, Motivation, Social, Ease, Fit,
   Novelty, Longevity — each with a crisp definition (Section 2).
@@ -113,7 +113,7 @@ Comedy rule: the names escalate in disbelief as the streak gets bigger.
 Each rung is a **total-reps milestone**: 1,000 → 3,333 → 6,666 → 10,000 → 20,000. Your chosen
 tier is irrelevant — a 3,333-tier user with 1,500 reps has already earned 🥉 Bronze, and
 changing tier can never cost a badge (the new rule is a strict superset of the old one, so
-nothing earned under the old rule is lost; badges are never revoked).
+nothing earned under the old rule is lost).
 
 | ID | Name | Rule | D | F | R | M | S | E | G | N | L | **Score** |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -353,25 +353,39 @@ export function evaluate(s: ChallengeState): Set<string> {
 }
 ```
 
-### 7.3 Sync — idempotent, diff-based, celebrate-only-new
+### 7.3 Sync — two paths, idempotent, wall always reflects current data
+
+There are **two sync paths**, and the difference is deliberate:
+
+- **Fast path** (after each log, `Profile.tsx`) — **adds only, never deletes**. It builds
+  state *without* tier-group data (`tierParticipants: []`), so it cannot judge competition
+  badges; deleting here would wrongly revoke them.
+- **Full path** (badge wall load, `AchievementsWall.tsx`) — **adds and deletes** (full
+  reconcile). It has complete data including the tier group, so `evaluate()` is authoritative.
 
 ```ts
-async function sync(userId: string, challengeId: number, nowSatisfied: Set<string>) {
-  const { data } = await supabase.from('user_achievements')
-    .select('achievement_id').eq('user_id', userId).eq('challenge_id', challengeId);
-  const owned = new Set((data ?? []).map((r) => r.achievement_id));
-  const fresh = [...nowSatisfied].filter((id) => !owned.has(id));
-  if (!fresh.length) return;
-  await supabase.from('user_achievements').upsert(
-    fresh.map((id) => ({ user_id: userId, challenge_id: challengeId, achievement_id: id })),
-    { onConflict: 'user_id,challenge_id,achievement_id' },
-  );
-  celebrate(fresh);  // confetti + the badge's exact name in the toast — the name IS the payload
+// Full path (wall): the wall mirrors the user's CURRENT data
+async function reconcile(userId, challengeId, state) {
+  const satisfied = evaluate(state);              // complete data, incl. tier group
+  const owned    = await fetchOwned(userId, challengeId);
+  const fresh    = [...satisfied].filter((id) => !owned.has(id));
+  const stale    = owned.filter((id) => !satisfied.has(id));
+  await upsert(fresh);                            // onConflict = PK (idempotent)
+  await delete(stale);                            // scoped to this user + challenge
+  celebrate(fresh);  // confetti + the badge's exact name in the toast
 }
 ```
 
-**Triggers:** after each log upsert (`handleLogDailyProgress` / `handleUpdateCalendarLog`) ·
-on challenge end (Metronome, Throne, Plot Twist) · on Profile mount (reconciliation).
+**Why delete is safe:** `evaluate()` is the single source of truth and is pure + fully
+tested. Max-over-history metrics (`longestStreak`, `top3WeekEndStreak`, `risingDays`) only
+*grow*, so a badge earned by a streak/combo/tyrant run is never wrongly revoked. Only
+current-state metrics (total reps, single-day max, exact daily counts) revoke — and that is
+exactly the correction case: log 1 000 by accident, edit down to 100 → the 1 000-rep badge
+goes away. **`challenge_logs` (the real data) is never touched** — only the derived
+`user_achievements` rows are reconciled.
+
+**Triggers:** fast path after each log · full path on every wall load (own *and* others'
+walls — the delete is scoped to the user being viewed).
 
 **Why it's smooth:** no N+1 (one `evaluate()` over in-memory rows) · idempotent (PK +
 `onConflict`) · celebration only for *new* unlocks · self-healing on load · a new badge = one
@@ -424,6 +438,7 @@ on challenge end (Metronome, Throne, Plot Twist) · on Profile mount (reconcilia
 | 9 | (v3.7) Full score audit — recomputed every composite by hand; fixed 5 arithmetic errors (Imp 9.25, Mythic 9.15, Reptile 7.90, Silver 7.30, Santa 7.55); Baby XP added to ranking; set count corrected to 26 everywhere | Numbers now check out. |
 | 10 | (v3.8) **Monster Day threshold 50 → 250+** (rescored 8.40 → 8.80, up to #5); **Mythic activated** — tier-independent volume badge (20,000 total reps, no 20k tier needed); reachability table updated; build wave W4 folded into W3 | Owner-approved set is final. |
 | 11 | (v3.9) **Ascent simplified to pure volume** — all 5 rungs (1,000 → 20,000) are total-reps milestones, tier-independent; changing tier can never cost a badge (new rule is a strict superset of the old); hints updated ("N totala reps"); all rungs show live progress on the wall | Simpler engine, better UX, zero data impact. |
+| 12 | (v4.0) **Wall reconciles to current data** — the badge wall now also *revokes* badges no longer earned (fast path stays add-only; it lacks tier-group data). Fixes the "logged 1 000 by accident, edited to 100, stuck with the badge" case. `challenge_logs` is never touched — only derived `user_achievements` rows are reconciled. Max-over-history badges (streaks, combo, tyrant) are inherently sticky and never wrongly revoked | The wall is now an honest, live view of what you've actually done. |
 
 ---
 
@@ -485,7 +500,8 @@ on challenge end (Metronome, Throne, Plot Twist) · on Profile mount (reconcilia
 - **Metrics: 9** — added **😂 Funny (15%)**; Ease = inverse build cost, Fit = data-model fit,
   Social = bragging value (all defined in Section 2).
 - **Integration:** 2 tables (+`challenge_id`), one pure `evaluate()` over data you already load,
-  idempotent upsert, confetti only for new unlocks, reconciliation on load. Trolling badges cost
-  one `includes(N)` each.
+  idempotent upsert, confetti only for new unlocks, and a wall that reconciles to current data
+  (editing a log down removes badges you no longer earn — your logs are never touched).
+  Trolling badges cost one `includes(N)` each.
 - **Ascent is pure volume, tier-independent** — all 5 rungs (1,000 → 20,000) are total-reps
   milestones; changing tier can never cost a badge. One seed row per badge.

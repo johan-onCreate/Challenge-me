@@ -36,7 +36,7 @@
                                    ▼
                     diff vs user_achievements (owned)
                          │                │
-              no new ────┘                └── new ──► idempotent upsert
+              fresh ────┘                └── fresh ──► upsert  (+ scoped delete of stale, full path only)
                                                          │
                                         isOwn && live action?
                                           │yes             │no
@@ -181,9 +181,13 @@ export function useAchievementSync(
 
 - Builds `ChallengeState` from data the page **already fetches** (no new queries for own user)
 - Runs `evaluate()`, diffs against `user_achievements` for (user, challenge)
-- **Idempotent upsert** with `onConflict: 'user_id,challenge_id,achievement_id'`
-- **Triggers:** after `handleLogDailyProgress` / `handleUpdateCalendarLog` in `Profile.tsx` ·
-  on mount (reconciliation — silent, no celebration)
+- **Two paths:**
+  - *Fast* (after each log in `Profile.tsx`): **idempotent upsert only**
+    (`onConflict: 'user_id,challenge_id,achievement_id'`) — no delete, because it lacks
+    tier-group data (deleting here would wrongly revoke competition badges).
+  - *Full* (wall load, own **and** others' walls): upsert **and** a scoped **delete** of
+    badges no longer satisfied — the wall mirrors current data. `challenge_logs` is never
+    touched; only derived `user_achievements` rows are reconciled.
 - `newlyUnlocked` is non-empty only for the *live action* path → that's what triggers confetti
 
 ---
@@ -242,7 +246,7 @@ export function useAchievementSync(
 | Case | Policy |
 |---|---|
 | Trolling "exactly N" | Day counts at its **final** total (upsert model). Log 1, then +40 → final 41 → no Sloth. Edit later to land exactly on N → badge grants (it's a game). |
-| Badge revocation | **Never.** Earned is earned, even if later edits would break the condition. |
+| Badge revocation | The **wall reconciles** to current data: badges no longer earned are removed on the next wall load (fast path stays add-only — it lacks tier-group data). Max-over-history badges (streaks, combo, tyrant) are inherently sticky and never wrongly revoked. `challenge_logs` is never touched. |
 | No active challenge | Wall shows "Ingen aktiv utmaning just nu." |
 | Tier group < 2 | Comp badges: hint only, no progress, never grantable. |
 | Santa's date | Constant `DEC_24 = '2026-12-24'` in `achievements.ts` (one-line change per year). |
@@ -277,7 +281,7 @@ export function useAchievementSync(
 | `sql/achievements.sql` | **NEW** — tables + 26 seed rows (§3) |
 | `src/achievements.ts` | **NEW** — catalog types, `ChallengeState`, `evaluate()`, `progressFor()` |
 | `src/achievements.test.ts` | **NEW** — engine + progress tests |
-| `src/useAchievementSync.ts` | **NEW** — diff + idempotent upsert hook |
+| `src/useAchievementSync.ts` | **NEW** — diff + idempotent upsert + scoped revoke (two-path reconcile) hook |
 | `src/components/AchievementsWall.tsx` | **NEW** — wall: header, progress bar, family groups, catch-up banner |
 | `src/components/BadgeCard.tsx` | **NEW** — 3-state card (earned / in-progress / locked) |
 | `src/components/UnlockCelebration.tsx` | **NEW** — confetti + toast |

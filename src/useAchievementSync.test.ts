@@ -4,6 +4,8 @@ import {
   fetchOwnedAchievements,
   grantAchievements,
   markAchievementsSeen,
+  reconcileAchievements,
+  revokeAchievements,
   syncAchievements,
 } from "./useAchievementSync";
 
@@ -13,43 +15,72 @@ interface OwnedRow {
   seen_at: string | null;
 }
 
+interface FakeFilter {
+  op: string;
+  value: unknown;
+}
+
 interface FakeCalls {
   tables: string[];
   upserts: Array<{ rows: Array<Record<string, unknown>>; onConflict?: string }>;
   updates: Array<Record<string, unknown>>;
+  deletes: Array<{ filters: FakeFilter[] }>;
 }
 
 /**
  * Minimal meningsfull efterbildning av supabase-klientens kedjestyling:
- * select/eq/is/update returnerar kedjan, upsert löser direkt, och
- * kedjan är then-able för await.
+ * select/eq/is/in/update returnerar kedjan, upsert löser direkt, delete
+ * växlar kedjan till raderingsläge, och kedjan är then-able för await.
  */
 function createFakeClient(
   ownedRows: OwnedRow[] = [],
   selectError: Error | null = null,
+  deleteError: Error | null = null,
 ) {
-  const calls: FakeCalls = { tables: [], upserts: [], updates: [] };
+  const calls: FakeCalls = { tables: [], upserts: [], updates: [], deletes: [] };
 
   const makeChain = () => {
-    const terminal = () =>
-      Promise.resolve({ data: selectError ? null : ownedRows, error: selectError });
+    const filters: FakeFilter[] = [];
+    let mode: "select" | "delete" = "select";
+    const terminal = () => {
+      if (mode === "delete") {
+        calls.deletes.push({ filters: [...filters] });
+        return Promise.resolve({ data: null, error: deleteError });
+      }
+      return Promise.resolve({
+        data: selectError ? null : ownedRows,
+        error: selectError,
+      });
+    };
     const chain: {
       select: () => typeof chain;
-      eq: () => typeof chain;
-      is: () => typeof chain;
+      eq: (column: string, value: unknown) => typeof chain;
+      is: (column: string, value: unknown) => typeof chain;
+      in: (column: string, value: unknown[]) => typeof chain;
       update: (value: Record<string, unknown>) => typeof chain;
       upsert: (
         rows: Array<Record<string, unknown>>,
         options?: { onConflict?: string },
       ) => Promise<{ data: unknown; error: null }>;
+      delete: () => typeof chain;
       then: (
         onfulfilled?: ((value: { data: unknown; error: unknown }) => unknown) | null,
         onrejected?: ((error: unknown) => unknown) | null,
       ) => Promise<unknown>;
     } = {
       select: () => chain,
-      eq: () => chain,
-      is: () => chain,
+      eq: (column, value) => {
+        filters.push({ op: `eq:${column}`, value });
+        return chain;
+      },
+      is: (column, value) => {
+        filters.push({ op: `is:${column}`, value });
+        return chain;
+      },
+      in: (column, value) => {
+        filters.push({ op: `in:${column}`, value });
+        return chain;
+      },
       update: (value) => {
         calls.updates.push(value);
         return chain;
@@ -57,6 +88,10 @@ function createFakeClient(
       upsert: (rows, options) => {
         calls.upserts.push({ rows, onConflict: options?.onConflict });
         return Promise.resolve({ data: rows, error: null });
+      },
+      delete: () => {
+        mode = "delete";
+        return chain;
       },
       then: (onfulfilled, onrejected) =>
         terminal().then(onfulfilled, onrejected),
@@ -201,6 +236,108 @@ describe("syncAchievements", () => {
     expect(calls.upserts).toEqual([]);
     expect(result.newlyUnlocked).toEqual([]);
     expect(result.owned).toHaveLength(6);
+  });
+
+  it("never revokes — the fast path lacks tier-group data", async () => {
+    // Användaren äger en tävlingsbadge (uppnådd i fullt spår). Snabbspåret
+    // saknar tier-gruppsdata och FÅR därför inte radera — annars skulle
+    // legitima tävlingsbadgar försvinna.
+    const { client, calls } = createFakeClient([
+      { achievement_id: "comp.throne", unlocked_at: "2026-10-05T10:00:00Z", seen_at: null },
+    ]);
+    const result = await syncAchievements(client as never, "u-me", 1, makeState());
+    expect(calls.deletes).toEqual([]);
+    expect(result.owned.map((entry) => entry.achievementId)).toContain("comp.throne");
+  });
+});
+
+describe("revokeAchievements", () => {
+  it("is a no-op for an empty list", async () => {
+    const { client, calls } = createFakeClient();
+    await revokeAchievements(client as never, "u-me", 1, []);
+    expect(calls.deletes).toEqual([]);
+  });
+
+  it("deletes only the given badges scoped to user and challenge", async () => {
+    const { client, calls } = createFakeClient();
+    await revokeAchievements(client as never, "u-me", 7, ["reps.1k", "day.monster"]);
+    expect(calls.deletes).toHaveLength(1);
+    const { filters } = calls.deletes[0];
+    expect(filters).toContainEqual({ op: "eq:user_id", value: "u-me" });
+    expect(filters).toContainEqual({ op: "eq:challenge_id", value: 7 });
+    expect(filters).toContainEqual({
+      op: "in:achievement_id",
+      value: ["reps.1k", "day.monster"],
+    });
+    expect(calls.tables).toEqual(["user_achievements"]);
+  });
+
+  it("throws on delete error", async () => {
+    const boom = new Error("Kan inte radera");
+    const { client } = createFakeClient([], null, boom);
+    await expect(
+      revokeAchievements(client as never, "u-me", 1, ["reps.1k"]),
+    ).rejects.toThrow("Kan inte radera");
+  });
+});
+
+describe("reconcileAchievements", () => {
+  it("revokes stale badges, keeps valid ones, and adds fresh ones", async () => {
+    // Äger reps.500, reps.1k, xp.100. Tillståndet (600 reps) uppfyller
+    // reps.500 + xp.100 men INTE reps.1k (600 < 1000) → reps.1k raderas.
+    const { client, calls } = createFakeClient([
+      { achievement_id: "reps.500", unlocked_at: "2026-10-05T10:00:00Z", seen_at: null },
+      { achievement_id: "reps.1k", unlocked_at: "2026-10-05T10:00:00Z", seen_at: null },
+      { achievement_id: "xp.100", unlocked_at: "2026-10-05T10:00:00Z", seen_at: null },
+    ]);
+    const result = await reconcileAchievements(client as never, "u-me", 1, makeState());
+
+    const deleted = (
+      calls.deletes[0]?.filters.find((f) => f.op === "in:achievement_id")?.value ??
+      []
+    ) as string[];
+    expect(deleted).toEqual(["reps.1k"]);
+
+    const ownedIds = result.owned.map((entry) => entry.achievementId);
+    expect(ownedIds).not.toContain("reps.1k");
+    expect(ownedIds).toContain("reps.500");
+    expect(ownedIds).toContain("xp.100");
+
+    const freshIds = calls.upserts[0]?.rows.map(
+      (row) => row.achievement_id,
+    ) as string[];
+    expect(result.newlyUnlocked.map((badge) => badge.id)).toEqual(freshIds);
+    expect(freshIds).not.toContain("reps.1k");
+  });
+
+  it("does not revoke when everything is still satisfied", async () => {
+    const { client, calls } = createFakeClient([
+      { achievement_id: "reps.500", unlocked_at: "2026-10-05T10:00:00Z", seen_at: null },
+      { achievement_id: "xp.100", unlocked_at: "2026-10-05T10:00:00Z", seen_at: null },
+      { achievement_id: "streak.7", unlocked_at: "2026-10-05T10:00:00Z", seen_at: null },
+      { achievement_id: "troll.1", unlocked_at: "2026-10-05T10:00:00Z", seen_at: null },
+      { achievement_id: "day.combo", unlocked_at: "2026-10-05T10:00:00Z", seen_at: null },
+      { achievement_id: "day.monster", unlocked_at: "2026-10-05T10:00:00Z", seen_at: null },
+    ]);
+    const result = await reconcileAchievements(client as never, "u-me", 1, makeState());
+    expect(calls.deletes).toEqual([]);
+    expect(result.owned).toHaveLength(6);
+  });
+
+  it("keeps sticky max-over-history badges (streak) that are still satisfied", async () => {
+    // longestStreak är ett max-över-historiken-mått: en gång uppnådd
+    // radera den aldrig (så länge den fortfarande uppfylls).
+    const { client, calls } = createFakeClient([
+      { achievement_id: "streak.30", unlocked_at: "2026-10-05T10:00:00Z", seen_at: null },
+    ]);
+    const result = await reconcileAchievements(
+      client as never,
+      "u-me",
+      1,
+      makeState({ longestStreak: 30 }),
+    );
+    expect(calls.deletes).toEqual([]);
+    expect(result.owned.map((entry) => entry.achievementId)).toContain("streak.30");
   });
 });
 
