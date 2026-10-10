@@ -1,50 +1,36 @@
-import { useState, FormEvent, useEffect } from "react";
+import { useEffect, useState } from "react";
+import type { FormEvent } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { getPasswordResetRedirectUrl } from "./authConfig";
 import AdminAnnouncements from "./AdminAnnouncements";
-
-interface Challenge {
-  id: number;
-  title: string;
-  description: string;
-  points: number;
-  is_active: boolean;
-  start_date: string;
-  end_date: string;
-  tiers: string[];
-}
-
-interface UserProfile {
-  id: string;
-  email: string | null;
-  full_name: string | null;
-  alias: string | null;
-  is_admin: boolean;
-}
+import { AdminUsers } from "./components/admin/AdminUsers";
+import { ChallengeForm } from "./components/admin/ChallengeForm";
+import { ChallengeList } from "./components/admin/ChallengeList";
+import type {
+  Challenge,
+  UserProfile,
+} from "./components/admin/adminTypes";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 function AdminChallenges() {
-  const [title, setTitle] = useState<string>("");
-  const [description, setDescription] = useState<string>("");
-  const [points, setPoints] = useState<number>(100);
-  const [startDate, setStartDate] = useState<string>("");
-  const [endDate, setEndDate] = useState<string>("");
-
-  // Hantering av de dynamiska nivåerna
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [points, setPoints] = useState(100);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [tiers, setTiers] = useState<string[]>([]);
-  const [newTierInput, setNewTierInput] = useState<string>("");
-
+  const [newTierInput, setNewTierInput] = useState("");
   const [challenges, setChallenges] = useState<Challenge[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [message, setMessage] = useState<string>("");
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
   const [editingChallengeId, setEditingChallengeId] = useState<number | null>(
     null,
   );
   const [users, setUsers] = useState<UserProfile[]>([]);
-  const [userMessage, setUserMessage] = useState<string>("");
+  const [userMessage, setUserMessage] = useState("");
   const [resettingUserId, setResettingUserId] = useState<string | null>(null);
 
   const fetchChallenges = async () => {
@@ -82,7 +68,7 @@ function AdminChallenges() {
   };
 
   const handleRemoveTier = (indexToRemove: number) => {
-    setTiers(tiers.filter((_, idx) => idx !== indexToRemove));
+    setTiers(tiers.filter((_, index) => index !== indexToRemove));
   };
 
   const resetForm = () => {
@@ -108,8 +94,8 @@ function AdminChallenges() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleSubmitChallenge = async (e: FormEvent) => {
-    e.preventDefault();
+  const handleSubmitChallenge = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     setLoading(true);
     setMessage("");
 
@@ -119,7 +105,7 @@ function AdminChallenges() {
       points,
       start_date: startDate ? new Date(startDate).toISOString() : null,
       end_date: endDate ? new Date(endDate).toISOString() : null,
-      tiers: tiers,
+      tiers,
     };
 
     const result = editingChallengeId
@@ -217,144 +203,27 @@ function AdminChallenges() {
 
       <AdminAnnouncements />
 
-      <form
+      <ChallengeForm
+        title={title}
+        description={description}
+        points={points}
+        startDate={startDate}
+        endDate={endDate}
+        tiers={tiers}
+        newTierInput={newTierInput}
+        editing={editingChallengeId !== null}
+        loading={loading}
+        onTitleChange={setTitle}
+        onDescriptionChange={setDescription}
+        onPointsChange={setPoints}
+        onStartDateChange={setStartDate}
+        onEndDateChange={setEndDate}
+        onNewTierInputChange={setNewTierInput}
+        onAddTier={handleAddTier}
+        onRemoveTier={handleRemoveTier}
+        onCancelEdit={resetForm}
         onSubmit={handleSubmitChallenge}
-        className="space-y-4 bg-inset p-4 rounded-xl border border-outline-soft"
-      >
-        <div className="flex items-center justify-between">
-          <h4 className="font-bold text-sm text-content">
-            {editingChallengeId ? "Redigera utmaning" : "Skapa utmaning"}
-          </h4>
-          {editingChallengeId && (
-            <button
-              type="button"
-              onClick={resetForm}
-              className="text-xs text-content-faint hover:text-content font-medium"
-            >
-              Avbryt redigering
-            </button>
-          )}
-        </div>
-        <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-content-muted mb-1">
-            Titel
-          </label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-            className="w-full px-3 py-2 border border-outline rounded-lg text-sm bg-raised outline-none focus:border-accent"
-          />
-        </div>
-
-        <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-content-muted mb-1">
-            Beskrivning
-          </label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            required
-            rows={2}
-            className="w-full px-3 py-2 border border-outline rounded-lg text-sm bg-raised outline-none focus:border-accent"
-          />
-        </div>
-
-        {/* NIVÅBYGGARE */}
-        <div className="space-y-2">
-          <label className="block text-xs font-semibold uppercase tracking-wider text-content-muted">
-            Konfigurera Nivåer / Mål
-          </label>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={newTierInput}
-              onChange={(e) => setNewTierInput(e.target.value)}
-              className="flex-1 px-3 py-2 border border-outline rounded-lg text-sm bg-raised outline-none"
-              placeholder="t.ex. 1000 squats"
-            />
-            <button
-              type="button"
-              onClick={handleAddTier}
-              className="bg-btn text-on-btn px-3 py-2 rounded-lg text-sm font-medium hover:bg-btn-hover"
-            >
-              Lägg till
-            </button>
-          </div>
-
-          {tiers.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 pt-1">
-              {tiers.map((t, idx) => (
-                <span
-                  key={idx}
-                  className="inline-flex items-center gap-1 text-xs bg-accent-soft text-accent-soft-text font-semibold px-2.5 py-1 rounded-lg border border-accent-soft-border"
-                >
-                  {t}
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveTier(idx)}
-                    className="text-content-faint hover:text-content font-bold ml-1 text-sm leading-none"
-                  >
-                    &times;
-                  </button>
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-content-muted mb-1">
-              Poäng
-            </label>
-            <input
-              type="number"
-              value={points}
-              onChange={(e) => setPoints(Number(e.target.value))}
-              required
-              className="w-full px-3 py-2 border border-outline rounded-lg text-sm bg-raised"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-content-muted mb-1">
-              Startdag
-            </label>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              required
-              className="w-full px-3 py-2 border border-outline rounded-lg text-sm bg-raised"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-content-muted mb-1">
-              Slutdag
-            </label>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              required
-              className="w-full px-3 py-2 border border-outline rounded-lg text-sm bg-raised"
-            />
-          </div>
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-accent hover:bg-accent-hover text-white font-medium py-2.5 rounded-lg text-sm shadow-sm transition-colors"
-        >
-          {loading
-            ? "Sparar..."
-            : editingChallengeId
-              ? "Spara ändringar"
-              : "Skapa utmaning"}
-        </button>
-      </form>
+      />
 
       {message && (
         <div className="p-3 text-xs bg-success-soft text-success-soft-text border border-success-soft-border rounded-lg font-medium">
@@ -362,113 +231,19 @@ function AdminChallenges() {
         </div>
       )}
 
-      <div className="space-y-3 bg-warning-soft p-4 rounded-xl border border-warning-soft-border">
-        <div>
-          <h4 className="font-bold text-sm text-content">
-            Användare ({users.length})
-          </h4>
-          <p className="text-xs text-content-muted mt-1">
-            Skicka en säker återställningslänk till en användare.
-          </p>
-        </div>
-        <div className="space-y-2">
-          {users.map((user) => (
-            <div
-              key={user.id}
-              className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-raised p-3 rounded-lg border border-warning-soft-border"
-            >
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-content truncate">
-                  {user.alias || user.full_name || "Namnlös användare"}
-                  {user.is_admin && " (admin)"}
-                </p>
-                <p className="text-xs text-content-faint truncate">
-                  {user.email || "Ingen e-postadress"}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => handleSendPasswordReset(user)}
-                disabled={!user.email || resettingUserId === user.id}
-                className="w-full sm:w-auto shrink-0 bg-warning hover:bg-warning-strong text-white px-3 py-1.5 rounded-lg text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {resettingUserId === user.id ? "Skickar..." : "Återställ"}
-              </button>
-            </div>
-          ))}
-        </div>
-        {userMessage && (
-          <p
-            className={`text-xs font-medium ${userMessage.startsWith("Fel") ? "text-danger" : "text-success-strong"}`}
-          >
-            {userMessage}
-          </p>
-        )}
-      </div>
+      <AdminUsers
+        users={users}
+        message={userMessage}
+        resettingUserId={resettingUserId}
+        onSendPasswordReset={handleSendPasswordReset}
+      />
 
-      {/* LISTA MED UTMANINGAR */}
-      <div className="space-y-3 pt-4 border-t border-outline-soft">
-        <h4 className="font-bold text-sm text-content">
-          Administrera utmaningar ({challenges.length})
-        </h4>
-        <div className="space-y-2">
-          {challenges.map((c) => (
-            <div
-              key={c.id}
-              className={`p-4 border rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${c.is_active ? "bg-accent-soft/40 border-accent-soft-border shadow-sm" : "bg-raised border-outline shadow-sm"}`}
-            >
-              <div className="space-y-1">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="font-bold text-sm text-content">
-                    {c.title}
-                  </span>
-                  <span className="text-[10px] bg-inset text-content-muted px-1.5 py-0.5 rounded font-bold">
-                    +{c.points} XP
-                  </span>
-                  {c.is_active && (
-                    <span className="text-[10px] bg-accent text-white px-2 py-0.5 rounded font-semibold animate-pulse">
-                      Aktiv
-                    </span>
-                  )}
-                </div>
-                {c.tiers && c.tiers.length > 0 && (
-                  <div className="flex gap-1 flex-wrap pt-0.5">
-                    {c.tiers.map((t, idx) => (
-                      <span
-                        key={idx}
-                        className="text-[10px] bg-inset text-content-muted px-2 py-0.5 rounded-md font-medium"
-                      >
-                        Nivå: {t}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  onClick={() => handleEditChallenge(c)}
-                  className="text-xs bg-accent-soft hover:bg-accent-soft-border text-accent-soft-text px-3 py-1.5 rounded-xl font-medium"
-                >
-                  Redigera
-                </button>
-                <button
-                  onClick={() => handleSetActive(c.id)}
-                  disabled={c.is_active}
-                  className="text-xs bg-raised hover:bg-inset text-content-secondary border border-outline px-3 py-1.5 rounded-xl font-medium shadow-sm disabled:cursor-default disabled:opacity-60"
-                >
-                  {c.is_active ? "Aktiv" : "Aktivera"}
-                </button>
-                <button
-                  onClick={() => handleDeleteChallenge(c.id)}
-                  className="text-xs bg-danger-soft hover:bg-danger-soft-border text-danger px-3 py-1.5 rounded-xl font-medium"
-                >
-                  Radera
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      <ChallengeList
+        challenges={challenges}
+        onEdit={handleEditChallenge}
+        onSetActive={handleSetActive}
+        onDelete={handleDeleteChallenge}
+      />
     </div>
   );
 }

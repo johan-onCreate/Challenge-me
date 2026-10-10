@@ -56,6 +56,7 @@ describe("StatsDashboard", () => {
     expect(html).toContain("Ingen aktivitet ännu");
     expect(html).toContain("Loggat idag:");
     expect(html).toContain("0<!-- --> reps");
+    expect(html).not.toContain("Totala poäng");
   });
 
   it("renders an empty state when challenges exist but nothing is logged", () => {
