@@ -1,6 +1,7 @@
 import { useState, FormEvent, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { getPasswordResetRedirectUrl } from "./authConfig";
+import AdminAnnouncements from "./AdminAnnouncements";
 
 interface Challenge {
   id: number;
@@ -213,6 +214,8 @@ function AdminChallenges() {
           Skapa, hantera eller ta bort dina utmaningar.
         </p>
       </div>
+
+      <AdminAnnouncements />
 
       <form
         onSubmit={handleSubmitChallenge}
