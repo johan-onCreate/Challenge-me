@@ -26,6 +26,9 @@ describe("StatsDashboard", () => {
     const html = renderToString(<StatsDashboard data={mockData} />);
 
     expect(html).toContain("Min statistik");
+    expect(html).toContain("Loggat idag:");
+    expect(html).toContain("20<!-- --> reps");
+    expect(html).toContain("Challenges");
     expect(html).toContain("Totala poäng");
     expect(html).toContain("Totala reps");
     expect(html).toContain("Snitt per dag");
@@ -51,6 +54,8 @@ describe("StatsDashboard", () => {
     );
 
     expect(html).toContain("Ingen aktivitet ännu");
+    expect(html).toContain("Loggat idag:");
+    expect(html).toContain("0<!-- --> reps");
   });
 
   it("renders an empty state when challenges exist but nothing is logged", () => {

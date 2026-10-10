@@ -77,6 +77,35 @@ function StatCard({
   );
 }
 
+function StatsHeading({
+  title,
+  todayReps,
+}: {
+  title: string;
+  todayReps: number;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-3">
+      <div className="min-w-0">
+        <h3 className="text-xl font-bold text-content tracking-tight">
+          {title}
+        </h3>
+        <p className="text-xs text-content-faint mt-0.5">
+          Översikt över alla utmaningar och aktivitet.
+        </p>
+      </div>
+      <div className="shrink-0 rounded-xl border border-outline-soft bg-inset px-3 py-2 text-right">
+        <p className="text-[11px] font-bold uppercase tracking-wider text-content-faint">
+          Loggat idag:
+        </p>
+        <p className="mt-0.5 text-sm font-extrabold text-content">
+          {todayReps} reps
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function ChartTooltip({
   active,
   payload,
@@ -140,14 +169,7 @@ export function StatsDashboard({
   if (!hasActivity) {
     return (
       <div className="space-y-6 animate-fade-in">
-        <div>
-          <h3 className="text-xl font-bold text-content tracking-tight">
-            {title}
-          </h3>
-          <p className="text-xs text-content-faint mt-0.5">
-            Översikt över alla utmaningar och aktivitet.
-          </p>
-        </div>
+        <StatsHeading title={title} todayReps={data.todayReps} />
         <div className="text-center py-10 text-content-faint text-sm bg-inset rounded-xl border border-dashed border-outline">
           Ingen aktivitet ännu. Logga dina första reps i en utmaning så visas
           din statistik här.
@@ -181,14 +203,7 @@ export function StatsDashboard({
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
-        <h3 className="text-xl font-bold text-content tracking-tight">
-          {title}
-        </h3>
-        <p className="text-xs text-content-faint mt-0.5">
-          Översikt över alla utmaningar och aktivitet.
-        </p>
-      </div>
+      <StatsHeading title={title} todayReps={data.todayReps} />
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {cards.map((card) => (

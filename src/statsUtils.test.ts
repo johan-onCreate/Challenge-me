@@ -138,6 +138,7 @@ describe("calculateStats", () => {
     );
 
     expect(stats.totalReps).toBe(100);
+    expect(stats.todayReps).toBe(50);
     expect(stats.totalPoints).toBe(50);
     expect(stats.challengeCount).toBe(1);
     expect(stats.loggedDays).toBe(2);
@@ -155,6 +156,7 @@ describe("calculateStats", () => {
   it("returns zero values without any activity", () => {
     const stats = calculateStats([], [], "2026-01-06");
     expect(stats.totalReps).toBe(0);
+    expect(stats.todayReps).toBe(0);
     expect(stats.totalPoints).toBe(0);
     expect(stats.averagePerDay).toBe(0);
     expect(stats.bestDay).toBeNull();
@@ -175,6 +177,7 @@ describe("calculateStats", () => {
     );
 
     expect(stats.loggedDays).toBe(2);
+    expect(stats.todayReps).toBe(8);
     expect(stats.currentStreak).toBe(2);
     expect(stats.longestStreak).toBe(2);
     expect(stats.dailySeries).toHaveLength(2);
@@ -200,5 +203,19 @@ describe("calculateStats", () => {
       "2026-01-05",
     );
     expect(stats.totalPoints).toBe(0);
+  });
+
+  it("sums multiple logs from today across different challenges", () => {
+    const stats = calculateStats(
+      [
+        { challengeId: 1, amount: 20, loggedAt: "2026-01-06" },
+        { challengeId: 2, amount: 15, loggedAt: "2026-01-06T12:00:00.000Z" },
+        { challengeId: 1, amount: 10, loggedAt: "2026-01-05" },
+      ],
+      [],
+      "2026-01-06",
+    );
+
+    expect(stats.todayReps).toBe(35);
   });
 });
