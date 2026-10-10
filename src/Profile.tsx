@@ -8,7 +8,6 @@ import {
 } from "./profileUtils";
 import {
   getChallengeDates,
-  getIsoWeekNumber,
   getMondayFirstOffset,
   isAllowedLogDate,
 } from "./calendarUtils";
@@ -16,6 +15,7 @@ import { toLocalDateKey as toTodayKey, toDateKey } from "./statsUtils";
 import { buildChallengeState, type Achievement } from "./achievements";
 import { syncOwnAchievements } from "./useAchievementSync";
 import { UnlockCelebration } from "./components/UnlockCelebration";
+import ChallengeCalendar from "./components/ChallengeCalendar";
 
 interface Challenge {
   id: number;
@@ -595,23 +595,6 @@ function Profile() {
     ...Array.from({ length: calendarStartOffset }, () => null),
     ...challengeDates,
   ];
-  const calendarGridCells: Array<
-    | { type: "week"; weekNumber: number | null }
-    | { type: "day"; date: string | null }
-  > = [];
-  for (let index = 0; index < calendarCells.length; index += 7) {
-    const weekDays = calendarCells.slice(index, index + 7);
-    const firstDate = weekDays.find((date): date is string => Boolean(date));
-    calendarGridCells.push({
-      type: "week",
-      weekNumber: firstDate ? getIsoWeekNumber(firstDate) : null,
-    });
-    weekDays.forEach((date) => calendarGridCells.push({ type: "day", date }));
-  }
-  const calendarMonthLabel =
-    minDate && maxDate
-      ? `${new Date(`${minDate}T00:00:00`).toLocaleDateString("sv-SE", { month: "long", year: "numeric" })} – ${new Date(`${maxDate}T00:00:00`).toLocaleDateString("sv-SE", { month: "long", year: "numeric" })}`
-      : "";
   const { currentChallengePoints, totalPoints } = calculateProfilePoints(
     historicalChallenges.map((challenge) => ({
       totalLoggedAmount: challenge.totalAmount,
@@ -1032,153 +1015,22 @@ function Profile() {
             )}
 
             {challengeDates.length > 0 && (
-              <div className="space-y-3 bg-inset p-2 sm:p-4 rounded-xl border border-outline-soft">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-xs font-bold uppercase tracking-wider text-content-muted">
-                    Kalender
-                    <span className="ml-2 font-medium normal-case text-content-faint">
-                      {calendarMonthLabel}
-                    </span>
-                  </span>
-                  <span className="text-[11px] text-content-faint">
-                    Klicka på en dag för att logga aktivitet
-                  </span>
-                </div>
-                <div className="grid grid-cols-7 sm:grid-cols-8 gap-1 text-center text-[10px] sm:text-xs font-bold uppercase tracking-wide text-content-fainter">
-                  <span className="hidden sm:block">V</span>
-                  {["Mån", "Tis", "Ons", "Tor", "Fre", "Lör", "Sön"].map(
-                    (day) => (
-                      <span key={day}>{day}</span>
-                    ),
-                  )}
-                </div>
-                <div className="grid grid-cols-7 sm:grid-cols-8 gap-1">
-                  {calendarGridCells.map((cell, index) => {
-                    if (cell.type === "week") {
-                      return (
-                        <div
-                          key={`week-${index}`}
-                          className="hidden min-h-14 items-center justify-center rounded-lg bg-inset text-[10px] font-bold text-content-faint sm:flex"
-                        >
-                          {cell.weekNumber ? `V${cell.weekNumber}` : ""}
-                        </div>
-                      );
-                    }
-
-                    const date = cell.date;
-                    if (!date) {
-                      return (
-                        <div key={`empty-${index}`} className="min-h-14" />
-                      );
-                    }
-
-                    const loggedAmount = loggedAmountByDate.get(date) || 0;
-                    const isToday = date === todayDate;
-                    const isFuture = date > todayDate;
-                    const dayNumber = Number(date.slice(8, 10));
-                    const isFirstOfMonth = date.slice(8, 10) === "01";
-                    const monthLabel = isFirstOfMonth
-                      ? new Date(`${date}T00:00:00`).toLocaleDateString(
-                          "sv-SE",
-                          { month: "short" },
-                        )
-                      : "";
-
-                    if (editingCalendarDate === date) {
-                      return (
-                        <div
-                          key={date}
-                          className="min-h-16 sm:min-h-14 rounded-lg border border-accent-soft-border bg-accent-soft p-1.5 sm:p-1"
-                        >
-                          {monthLabel && (
-                            <span className="block truncate text-[9px] font-bold capitalize text-accent-soft-text">
-                              {monthLabel}
-                            </span>
-                          )}
-                          <span className="block text-sm sm:text-xs font-bold text-accent-soft-text">
-                            {dayNumber}
-                          </span>
-                          <input
-                            type="number"
-                            min="0"
-                            value={editingCalendarAmount}
-                            onChange={(event) =>
-                              setEditingCalendarAmount(event.target.value)
-                            }
-                            className="w-full rounded border border-accent-soft-border px-1 py-0.5 text-[10px] text-content"
-                            autoFocus
-                          />
-                          <div className="mt-1 flex gap-1">
-                            <button
-                              type="button"
-                              onClick={handleUpdateCalendarLog}
-                              className="flex-1 rounded bg-success-strong px-1 py-0.5 text-[10px] font-bold text-white"
-                            >
-                              Spara
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setEditingCalendarDate(null)}
-                              className="rounded bg-raised px-1 py-0.5 text-[10px] font-bold text-content-faint"
-                            >
-                              X
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <button
-                        key={date}
-                        type="button"
-                        disabled={isFuture}
-                        onClick={() => {
-                          setLogDate(date);
-                          setEditingCalendarDate(date);
-                          setEditingCalendarAmount(
-                            loggedAmount > 0 ? String(loggedAmount) : "",
-                          );
-                        }}
-                        className={`min-h-16 sm:min-h-14 rounded-lg border p-1.5 sm:p-1 text-left transition-colors ${
-                          loggedAmount > 0
-                            ? "border-success-soft-border bg-success-soft text-success-soft-text"
-                            : isToday
-                              ? "border-accent-soft-border bg-accent-soft text-accent-soft-text"
-                              : isFuture
-                                ? "border-outline-soft bg-raised text-content-fainter"
-                                : "border-outline bg-raised text-content-muted hover:border-accent-soft-border hover:bg-accent-soft"
-                        } disabled:cursor-not-allowed`}
-                        title={`${date}${loggedAmount > 0 ? `: ${loggedAmount} reps` : ": lägg till reps"}`}
-                      >
-                        {monthLabel && (
-                          <span className="block truncate text-[9px] font-bold capitalize text-content-faint">
-                            {monthLabel}
-                          </span>
-                        )}
-                        <span className="block text-sm sm:text-xs font-bold">
-                          {dayNumber}
-                        </span>
-                        {loggedAmount > 0 && (
-                          <span className="block truncate text-[10px] font-semibold">
-                            {loggedAmount} reps
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-                <div className="flex flex-wrap gap-3 text-[11px] text-content-faint">
-                  <span className="flex items-center gap-1">
-                    <span className="h-2.5 w-2.5 rounded-sm bg-success-soft-border" />
-                    Loggad
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <span className="h-2.5 w-2.5 rounded-sm bg-accent-soft-border" />
-                    Idag
-                  </span>
-                </div>
-              </div>
+              <ChallengeCalendar
+                startDate={minDate}
+                endDate={maxDate}
+                todayDate={todayDate}
+                loggedAmounts={loggedAmountByDate}
+                editingDate={editingCalendarDate}
+                editingAmount={editingCalendarAmount}
+                onEditingAmountChange={setEditingCalendarAmount}
+                onSelectDate={(date, amount) => {
+                  setLogDate(date);
+                  setEditingCalendarDate(date);
+                  setEditingCalendarAmount(amount > 0 ? String(amount) : "");
+                }}
+                onSave={handleUpdateCalendarLog}
+                onCancel={() => setEditingCalendarDate(null)}
+              />
             )}
           </div>
         )}
