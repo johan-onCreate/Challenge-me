@@ -8,6 +8,7 @@
 
     /* Bundler resolution */
     "moduleResolution": "bundler",
+    "types": ["vite/client", "node"],
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,

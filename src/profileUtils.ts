@@ -30,6 +30,40 @@ export function calculateEarnedPoints(
   return Math.round(maximumPoints * completionRatio);
 }
 
+export interface ChallengePointsInput {
+  totalLoggedAmount: number;
+  savedTier: string;
+  maximumPoints: number;
+}
+
+export function calculateProfilePoints(
+  historicalChallenges: readonly ChallengePointsInput[],
+  currentChallenge: ChallengePointsInput | null,
+): { currentChallengePoints: number; totalPoints: number } {
+  const historicalPoints = historicalChallenges.reduce(
+    (total, challenge) =>
+      total +
+      calculateEarnedPoints(
+        challenge.totalLoggedAmount,
+        challenge.savedTier,
+        challenge.maximumPoints,
+      ),
+    0,
+  );
+  const currentChallengePoints = currentChallenge
+    ? calculateEarnedPoints(
+        currentChallenge.totalLoggedAmount,
+        currentChallenge.savedTier,
+        currentChallenge.maximumPoints,
+      )
+    : 0;
+
+  return {
+    currentChallengePoints,
+    totalPoints: historicalPoints + currentChallengePoints,
+  };
+}
+
 export function canChangeTier(
   selectedTier: string,
   savedTier: string,

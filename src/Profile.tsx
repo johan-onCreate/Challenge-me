@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import {
   calculateEarnedPoints,
   calculateProgressPercent,
+  calculateProfilePoints,
   canChangeTier,
 } from "./profileUtils";
 import { getChallengeDates, getIsoWeekNumber } from "./calendarUtils";
@@ -59,7 +60,6 @@ function Profile() {
   const [savedTier, setSavedTier] = useState<string>("");
   const [tierMessage, setTierMessage] = useState<string>("");
   const [tierLoading, setTierLoading] = useState<boolean>(false);
-  const [totalPoints, setTotalPoints] = useState<number>(0);
   const [historicalChallenges, setHistoricalChallenges] = useState<
     HistoricalChallenge[]
   >([]);
@@ -245,20 +245,6 @@ function Profile() {
         participantsByGroup.set(groupKey, participants);
       });
       if (allUserChallenges) {
-        const points = allUserChallenges.reduce((sum: number, item: any) => {
-          const challenge = challengeById.get(item.challenge_id);
-          const totalAmount = totalsByChallenge.get(item.challenge_id) || 0;
-          return (
-            sum +
-            calculateEarnedPoints(
-              totalAmount,
-              item.chosen_tier || "",
-              challenge?.points || 0,
-            )
-          );
-        }, 0);
-        setTotalPoints(points);
-
         const previousChallenges = allUserChallenges.flatMap((item: any) => {
           const challenge = challengeById.get(item.challenge_id);
 
@@ -390,17 +376,6 @@ function Profile() {
       setSavedTier("");
       setDailyLogs([]);
       setTotalLoggedAmount(0);
-      setTotalPoints((points) =>
-        Math.max(
-          0,
-          points -
-            calculateEarnedPoints(
-              totalLoggedAmount,
-              savedTier,
-              currentChallenge.points,
-            ),
-        ),
-      );
       setCancelPhrase("");
       setShowCancelDialog(false);
     }
@@ -611,6 +586,20 @@ function Profile() {
       ? `${new Date(`${minDate}T00:00:00`).toLocaleDateString("sv-SE", { month: "long", year: "numeric" })} – ${new Date(`${maxDate}T00:00:00`).toLocaleDateString("sv-SE", { month: "long", year: "numeric" })}`
       : "";
   const todayDate = toLocalDateKey(new Date());
+  const { currentChallengePoints, totalPoints } = calculateProfilePoints(
+    historicalChallenges.map((challenge) => ({
+      totalLoggedAmount: challenge.totalAmount,
+      savedTier: challenge.chosenTier,
+      maximumPoints: challenge.points,
+    })),
+    currentChallenge
+      ? {
+          totalLoggedAmount,
+          savedTier,
+          maximumPoints: currentChallenge.points,
+        }
+      : null,
+  );
 
   return (
     <div className="space-y-8 animate-fade-in">
@@ -648,12 +637,7 @@ function Profile() {
                   {currentChallenge.title}
                 </h4>
                 <span className="text-xs px-2.5 py-0.5 font-bold rounded-full bg-warning-soft text-warning-soft-text">
-                  +
-                  {calculateEarnedPoints(
-                    totalLoggedAmount,
-                    savedTier,
-                    currentChallenge.points,
-                  )}{" "}
+                  +{currentChallengePoints}{" "}
                   / {currentChallenge.points} XP
                 </span>
               </div>
