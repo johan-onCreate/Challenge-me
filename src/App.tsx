@@ -10,6 +10,7 @@ import Profile from "./Profile";
 import AdminChallenges from "./AdminChallenges";
 import Leaderboard from "./Leaderboard";
 import ThemeSwitcher from "./ThemeSwitcher";
+import AnnouncementToast from "./components/AnnouncementToast";
 
 const Stats = lazy(() => import("./Stats"));
 
@@ -114,6 +115,8 @@ function App() {
           </div>
         </div>
       </header>
+
+      {user && <AnnouncementToast key={user.id} userId={user.id} />}
 
       {/* Main Content Area */}
       <main className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 sm:mt-10">
