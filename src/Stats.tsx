@@ -11,14 +11,16 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import {
   ChallengeLog,
   ChallengeSummary,
   StatsData,
   calculateStats,
   toLocalDateKey,
+  toDateKey,
 } from "./statsUtils";
+import AchievementsWall, { type WallChallenge } from "./components/AchievementsWall";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -373,9 +375,16 @@ export function StatsDashboard({
 function StatsContent({ userId }: { userId?: string }) {
   const [data, setData] = useState<StatsData | null>(null);
   const [title, setTitle] = useState("Min statistik");
+  const [wallInfo, setWallInfo] = useState<{
+    selectedUserId: string;
+    currentUserId: string;
+    activeChallenge: WallChallenge | null;
+  } | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [retry, setRetry] = useState(0);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get("tab") === "priser" ? "priser" : "stats";
 
   const loadStats = useCallback(async () => {
     const {
@@ -407,7 +416,7 @@ function StatsContent({ userId }: { userId?: string }) {
     if (userChallengesError) throw userChallengesError;
     const { data: challengeRows, error: challengeRowsError } = await supabase
       .from("challenges")
-      .select("id, title, points");
+      .select("id, title, points, is_active, start_date, end_date");
     if (challengeRowsError) throw challengeRowsError;
     const { data: logs, error: logsError } = await supabase
       .from("challenge_logs")
@@ -446,9 +455,27 @@ function StatsContent({ userId }: { userId?: string }) {
       loggedAt: log.logged_at,
     }));
 
+    const activeRow = (challengeRows || []).find(
+      (challenge) => challenge.is_active === true,
+    );
+    const activeChallenge: WallChallenge | null = activeRow
+      ? {
+          id: activeRow.id,
+          title: activeRow.title,
+          points: activeRow.points,
+          startKey: toDateKey(String(activeRow.start_date)),
+          endKey: toDateKey(String(activeRow.end_date)),
+        }
+      : null;
+
     return {
       data: calculateStats(logEntries, summaries, toLocalDateKey(new Date())),
       title: selectedTitle,
+      wall: {
+        selectedUserId,
+        currentUserId: user.id,
+        activeChallenge,
+      },
     };
   }, [userId]);
 
@@ -461,6 +488,7 @@ function StatsContent({ userId }: { userId?: string }) {
         if (!cancelled) {
           setData(result.data);
           setTitle(result.title);
+          setWallInfo(result.wall);
         }
       } catch {
         if (!cancelled) {
@@ -507,9 +535,45 @@ function StatsContent({ userId }: { userId?: string }) {
     );
   }
 
-  if (!data) return null;
+  if (!data || !wallInfo) return null;
 
-  return <StatsDashboard data={data} title={title} />;
+  const tabButtonClass = (active: boolean) =>
+    `px-4 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+      active
+        ? "bg-raised text-content shadow-sm"
+        : "text-content-muted hover:text-content"
+    }`;
+
+  return (
+    <div className="space-y-5">
+      <div className="flex w-fit gap-1 rounded-xl border border-outline-soft bg-inset p-1">
+        <button
+          type="button"
+          onClick={() => setSearchParams({})}
+          className={tabButtonClass(activeTab === "stats")}
+        >
+          Statistik
+        </button>
+        <button
+          type="button"
+          onClick={() => setSearchParams({ tab: "priser" })}
+          className={tabButtonClass(activeTab === "priser")}
+        >
+          Priser 🏆
+        </button>
+      </div>
+
+      {activeTab === "stats" ? (
+        <StatsDashboard data={data} title={title} />
+      ) : (
+        <AchievementsWall
+          userId={wallInfo.selectedUserId}
+          isOwn={wallInfo.selectedUserId === wallInfo.currentUserId}
+          challenge={wallInfo.activeChallenge}
+        />
+      )}
+    </div>
+  );
 }
 
 function Stats() {

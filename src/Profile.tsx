@@ -1,4 +1,4 @@
-import { useState, FormEvent, useEffect } from "react";
+import { useState, FormEvent, useEffect, useCallback } from "react";
 import { createClient } from "@supabase/supabase-js";
 import {
   calculateEarnedPoints,
@@ -6,6 +6,10 @@ import {
   canChangeTier,
 } from "./profileUtils";
 import { getChallengeDates, getIsoWeekNumber } from "./calendarUtils";
+import { toLocalDateKey as toTodayKey, toDateKey } from "./statsUtils";
+import { buildChallengeState, type Achievement } from "./achievements";
+import { syncOwnAchievements } from "./useAchievementSync";
+import { UnlockCelebration } from "./components/UnlockCelebration";
 
 interface Challenge {
   id: number;
@@ -80,7 +84,52 @@ function Profile() {
   const [cancelLoading, setCancelLoading] = useState<boolean>(false);
   const [cancelMessage, setCancelMessage] = useState<string>("");
 
-  const fetchChallengeLogs = async (userId: string, challengeId: number) => {
+  // States för prisupplåsningar (confetti-kön)
+  const [newlyUnlocked, setNewlyUnlocked] = useState<Achievement[]>([]);
+  const clearCelebration = useCallback(() => setNewlyUnlocked([]), []);
+
+  const syncAchievementsAfterLogs = async (
+    userId: string,
+    logs: LogEntry[],
+  ) => {
+    if (!currentChallenge) return;
+    try {
+      const dayTotals = new Map<string, number>();
+      logs.forEach((log) => {
+        const day = toDateKey(String(log.logged_at));
+        dayTotals.set(day, (dayTotals.get(day) ?? 0) + log.amount);
+      });
+      const state = buildChallengeState({
+        challengeId: currentChallenge.id,
+        startKey: toDateKey(currentChallenge.start_date),
+        endKey: toDateKey(currentChallenge.end_date),
+        todayKey: toTodayKey(new Date()),
+        userId,
+        userDayTotals: dayTotals,
+        chosenTier: savedTier,
+        points: currentChallenge.points,
+        // Snabbspår utan tier-gruppsdata — tävlingsbadgar samordnas
+        // på prisväggen (fullt spår)
+        tierParticipants: [],
+      });
+      const { newlyUnlocked: fresh } = await syncOwnAchievements(
+        userId,
+        currentChallenge.id,
+        state,
+      );
+      if (fresh.length > 0) {
+        setNewlyUnlocked((prev) => [...prev, ...fresh]);
+      }
+    } catch {
+      // Priser får aldrig skada loggningen — misslyckande ignoreras
+    }
+  };
+
+  const fetchChallengeLogs = async (
+    userId: string,
+    challengeId: number,
+    celebrate = false,
+  ) => {
     const { data: logs } = await supabase
       .from("challenge_logs")
       .select("id, amount, logged_at")
@@ -92,6 +141,9 @@ function Profile() {
       setDailyLogs(logs);
       const total = logs.reduce((sum, item) => sum + item.amount, 0);
       setTotalLoggedAmount(total);
+      if (celebrate) {
+        void syncAchievementsAfterLogs(userId, logs);
+      }
     }
   };
 
@@ -420,7 +472,7 @@ function Profile() {
 
     if (!error) {
       setLogAmount("");
-      fetchChallengeLogs(user.id, currentChallenge.id);
+      fetchChallengeLogs(user.id, currentChallenge.id, true);
     }
   };
 
@@ -449,7 +501,7 @@ function Profile() {
 
     if (!error) {
       setEditingLogId(null);
-      fetchChallengeLogs(user.id, currentChallenge.id);
+      fetchChallengeLogs(user.id, currentChallenge.id, true);
     }
   };
 
@@ -487,7 +539,7 @@ function Profile() {
     if (!error) {
       setEditingCalendarDate(null);
       setEditingCalendarAmount("");
-      fetchChallengeLogs(user.id, currentChallenge.id);
+      fetchChallengeLogs(user.id, currentChallenge.id, true);
     }
   };
 
@@ -508,7 +560,7 @@ function Profile() {
       .eq("id", logId);
 
     if (!error) {
-      fetchChallengeLogs(user.id, currentChallenge.id);
+      fetchChallengeLogs(user.id, currentChallenge.id, true);
     }
   };
   const progressPercent = calculateProgressPercent(
@@ -1280,6 +1332,13 @@ function Profile() {
           </div>
         )}
       </div>
+
+      {newlyUnlocked.length > 0 && (
+        <UnlockCelebration
+          achievements={newlyUnlocked}
+          onDone={clearCelebration}
+        />
+      )}
     </div>
   );
 }
