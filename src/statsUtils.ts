@@ -35,6 +35,7 @@ export interface ChallengePoint {
 
 export interface StatsData {
   totalReps: number;
+  todayReps: number;
   totalPoints: number;
   challengeCount: number;
   loggedDays: number;
@@ -173,6 +174,7 @@ export function calculateStats(
 
   return {
     totalReps,
+    todayReps: dailyTotals.get(today) ?? 0,
     totalPoints,
     challengeCount: challenges.length,
     loggedDays,
