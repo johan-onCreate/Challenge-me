@@ -24,3 +24,21 @@ export function getIsoWeekNumber(dateKey: string): number {
 
   return Math.ceil(((date.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
 }
+
+export function getMondayFirstOffset(dateKey: string): number {
+  const day = new Date(`${dateKey}T00:00:00Z`).getUTCDay();
+  return (day + 6) % 7;
+}
+
+export function isAllowedLogDate(
+  dateKey: string,
+  startKey: string,
+  endKey: string,
+  todayKey: string,
+): boolean {
+  return (
+    dateKey >= startKey &&
+    dateKey <= endKey &&
+    dateKey <= todayKey
+  );
+}

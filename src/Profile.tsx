@@ -6,7 +6,12 @@ import {
   calculateProfilePoints,
   canChangeTier,
 } from "./profileUtils";
-import { getChallengeDates, getIsoWeekNumber } from "./calendarUtils";
+import {
+  getChallengeDates,
+  getIsoWeekNumber,
+  getMondayFirstOffset,
+  isAllowedLogDate,
+} from "./calendarUtils";
 import { toLocalDateKey as toTodayKey, toDateKey } from "./statsUtils";
 import { buildChallengeState, type Achievement } from "./achievements";
 import { syncOwnAchievements } from "./useAchievementSync";
@@ -87,6 +92,7 @@ function Profile() {
   // States för prisupplåsningar (confetti-kön)
   const [newlyUnlocked, setNewlyUnlocked] = useState<Achievement[]>([]);
   const clearCelebration = useCallback(() => setNewlyUnlocked([]), []);
+  const todayDate = toTodayKey(new Date());
 
   const syncAchievementsAfterLogs = async (
     userId: string,
@@ -175,7 +181,7 @@ function Profile() {
 
       if (activeChallenge) {
         setCurrentChallenge(activeChallenge);
-        setLogDate(new Date().toISOString().split("T")[0]);
+        setLogDate(toTodayKey(new Date()));
 
         const { data: completedCheck } = await supabase
           .from("user_challenges")
@@ -418,7 +424,18 @@ function Profile() {
     if (!isCurrentCompleted || !currentChallenge) return;
 
     const amountNum = parseInt(logAmount);
-    if (isNaN(amountNum) || amountNum <= 0 || !logDate) return;
+    if (
+      isNaN(amountNum) ||
+      amountNum <= 0 ||
+      !isAllowedLogDate(
+        logDate,
+        toDateKey(currentChallenge.start_date),
+        toDateKey(currentChallenge.end_date),
+        todayDate,
+      )
+    ) {
+      return;
+    }
 
     const {
       data: { user },
@@ -486,7 +503,18 @@ function Profile() {
     }
 
     const amountNum = parseInt(editingCalendarAmount, 10);
-    if (isNaN(amountNum) || amountNum < 0) return;
+    if (
+      isNaN(amountNum) ||
+      amountNum < 0 ||
+      !isAllowedLogDate(
+        editingCalendarDate,
+        toDateKey(currentChallenge.start_date),
+        toDateKey(currentChallenge.end_date),
+        todayDate,
+      )
+    ) {
+      return;
+    }
 
     const {
       data: { user },
@@ -549,6 +577,7 @@ function Profile() {
   const maxDate = currentChallenge?.end_date
     ? currentChallenge.end_date.split("T")[0]
     : "";
+  const maxLogDate = maxDate && maxDate < todayDate ? maxDate : todayDate;
   const availableTiers = currentChallenge?.tiers || [];
   const savedTierUnavailable =
     isCurrentCompleted &&
@@ -557,12 +586,10 @@ function Profile() {
   const loggedAmountByDate = new Map(
     dailyLogs.map((log) => [log.logged_at, log.amount]),
   );
-  const toLocalDateKey = (date: Date) =>
-    `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
   const challengeDates =
     minDate && maxDate ? getChallengeDates(minDate, maxDate) : [];
   const calendarStartOffset = minDate
-    ? new Date(`${minDate}T00:00:00`).getDay()
+    ? getMondayFirstOffset(minDate)
     : 0;
   const calendarCells: Array<string | null> = [
     ...Array.from({ length: calendarStartOffset }, () => null),
@@ -585,7 +612,6 @@ function Profile() {
     minDate && maxDate
       ? `${new Date(`${minDate}T00:00:00`).toLocaleDateString("sv-SE", { month: "long", year: "numeric" })} – ${new Date(`${maxDate}T00:00:00`).toLocaleDateString("sv-SE", { month: "long", year: "numeric" })}`
       : "";
-  const todayDate = toLocalDateKey(new Date());
   const { currentChallengePoints, totalPoints } = calculateProfilePoints(
     historicalChallenges.map((challenge) => ({
       totalLoggedAmount: challenge.totalAmount,
@@ -710,7 +736,7 @@ function Profile() {
                       </span>
                     </div>
                     <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-bold uppercase tracking-wide text-content-fainter">
-                      {["Sön", "Mån", "Tis", "Ons", "Tor", "Fre", "Lör"].map(
+                      {["Mån", "Tis", "Ons", "Tor", "Fre", "Lör", "Sön"].map(
                         (day) => (
                           <span key={day}>{day}</span>
                         ),
@@ -890,7 +916,7 @@ function Profile() {
                       type="date"
                       value={logDate}
                       min={minDate}
-                      max={maxDate}
+                      max={maxLogDate}
                       onChange={(e) => setLogDate(e.target.value)}
                       required
                       className="w-full px-3 py-2 border border-outline rounded-xl text-sm bg-raised"
@@ -1020,7 +1046,7 @@ function Profile() {
                 </div>
                 <div className="grid grid-cols-8 gap-1 text-center text-[10px] font-bold uppercase tracking-wide text-content-fainter">
                   <span>V</span>
-                  {["Sön", "Mån", "Tis", "Ons", "Tor", "Fre", "Lör"].map(
+                  {["Mån", "Tis", "Ons", "Tor", "Fre", "Lör", "Sön"].map(
                     (day) => (
                       <span key={day}>{day}</span>
                     ),
