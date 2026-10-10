@@ -1032,7 +1032,7 @@ function Profile() {
             )}
 
             {challengeDates.length > 0 && (
-              <div className="space-y-3 bg-inset p-4 rounded-xl border border-outline-soft">
+              <div className="space-y-3 bg-inset p-2 sm:p-4 rounded-xl border border-outline-soft">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="text-xs font-bold uppercase tracking-wider text-content-muted">
                     Kalender
@@ -1044,21 +1044,21 @@ function Profile() {
                     Klicka på en dag för att logga aktivitet
                   </span>
                 </div>
-                <div className="grid grid-cols-8 gap-1 text-center text-[10px] font-bold uppercase tracking-wide text-content-fainter">
-                  <span>V</span>
+                <div className="grid grid-cols-7 sm:grid-cols-8 gap-1 text-center text-[10px] sm:text-xs font-bold uppercase tracking-wide text-content-fainter">
+                  <span className="hidden sm:block">V</span>
                   {["Mån", "Tis", "Ons", "Tor", "Fre", "Lör", "Sön"].map(
                     (day) => (
                       <span key={day}>{day}</span>
                     ),
                   )}
                 </div>
-                <div className="grid grid-cols-8 gap-1">
+                <div className="grid grid-cols-7 sm:grid-cols-8 gap-1">
                   {calendarGridCells.map((cell, index) => {
                     if (cell.type === "week") {
                       return (
                         <div
                           key={`week-${index}`}
-                          className="flex min-h-14 items-center justify-center rounded-lg bg-inset text-[10px] font-bold text-content-faint"
+                          className="hidden min-h-14 items-center justify-center rounded-lg bg-inset text-[10px] font-bold text-content-faint sm:flex"
                         >
                           {cell.weekNumber ? `V${cell.weekNumber}` : ""}
                         </div>
@@ -1088,14 +1088,14 @@ function Profile() {
                       return (
                         <div
                           key={date}
-                          className="min-h-14 rounded-lg border border-accent-soft-border bg-accent-soft p-1"
+                          className="min-h-16 sm:min-h-14 rounded-lg border border-accent-soft-border bg-accent-soft p-1.5 sm:p-1"
                         >
                           {monthLabel && (
                             <span className="block truncate text-[9px] font-bold capitalize text-accent-soft-text">
                               {monthLabel}
                             </span>
                           )}
-                          <span className="block text-xs font-bold text-accent-soft-text">
+                          <span className="block text-sm sm:text-xs font-bold text-accent-soft-text">
                             {dayNumber}
                           </span>
                           <input
@@ -1140,7 +1140,7 @@ function Profile() {
                             loggedAmount > 0 ? String(loggedAmount) : "",
                           );
                         }}
-                        className={`min-h-14 rounded-lg border p-1 text-left transition-colors ${
+                        className={`min-h-16 sm:min-h-14 rounded-lg border p-1.5 sm:p-1 text-left transition-colors ${
                           loggedAmount > 0
                             ? "border-success-soft-border bg-success-soft text-success-soft-text"
                             : isToday
@@ -1156,7 +1156,7 @@ function Profile() {
                             {monthLabel}
                           </span>
                         )}
-                        <span className="block text-xs font-bold">
+                        <span className="block text-sm sm:text-xs font-bold">
                           {dayNumber}
                         </span>
                         {loggedAmount > 0 && (
