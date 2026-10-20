@@ -38,9 +38,10 @@ Nye ren hjälpfunktioner (rena, testade): `longestConstantRun`,
 - `firstToReachGoal(participants, goal)`: tidigaste dag då någon passerar
   målet vinner; samma-dag-avgörande = minsta userId (deterministiskt;
   väggen har bara dagssummor, inga tidsstämplar).
-- `buildChallengeState` beräknar `goatWinner` (kräver grupp ≥ 2 + tier med
-  GOAT-badge). Snabbspåret i profil (`tierParticipants: []`) ger `null` —
-  GOAT beviljas bara på prisväggen, som tävlingsbadgarna.
+- `buildChallengeState` beräknar `goatWinner` (kräver minst en deltagare i
+  tiern — en ensam räcker — + tier med GOAT-badge). Snabbspåret i profil
+  (`tierParticipants: []`) ger `null` — GOAT beviljas bara på prisväggen,
+  som tävlingsbadgarna.
 - `evaluate()` beviljar GOAT-badget bara om `goatWinner === userId` och
   badge-mål === användarens `chosenTier` → exakt en mottagare per nivå.
 - Progress: bara ditt egna tier-mål visar progressrad; övriga GOAT-badges
@@ -153,7 +154,7 @@ hint → "Logga exakt 1 squat under en dag."
    - 1 500+ reps över en rullande vecka → Seven Days of Soreness
    - Logga en dag 31/10 (Halloween) → Nightmare on Squat Street
    - 250+ på 27/11 (Black Friday) → Black Friday Burn
-   - GOAT: kräver minst 2 i samma tier — först ut till tier-målet får 🐐
+   - GOAT: först ut till tier-målet får 🐐 (räcker att vara ensam i tiern)
    - "Nice." kräver exakt 6 969 **totala** — loggar du fler försvinner det
      (badget återfinns om du hamnar på exakt 6 969 igen, via väggen).
 

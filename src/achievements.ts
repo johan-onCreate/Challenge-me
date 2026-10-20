@@ -521,11 +521,12 @@ export function buildChallengeState(input: BuildStateInput): ChallengeState {
   const hasGroup = tierParticipants.length >= 2;
   const midKey = midpointKey(startKey, endKey);
   const tierGoal = Number.parseInt(chosenTier, 10) || 0;
-  // GOAT: bara tier-nivåerna med eget GOAT-badge deltar, och bara i en
-  // riktig grupp. Snabbspåret (tierParticipants: []) ger alltså null —
-  // GOAT bedöms på prisväggen, som tävlingsbadgarna.
+  // GOAT: bara tier-nivåerna med eget GOAT-badge deltar. En ensam i sin
+  // tier kan fortfarande bli GOAT (först till målet = den enda).
+  // Snabbspåret (tierParticipants: []) ger alltså null — GOAT bedöms på
+  // prisväggen, som tävlingsbadgarna.
   const goatWinner =
-    hasGroup && GOAT_BADGE_BY_GOAL.has(tierGoal)
+    tierParticipants.length >= 1 && GOAT_BADGE_BY_GOAL.has(tierGoal)
       ? firstToReachGoal(tierParticipants, tierGoal)
       : null;
 
@@ -688,8 +689,9 @@ export function evaluate(state: ChallengeState): ReadonlySet<string> {
 
   // GOAT — bara en mottagare per vald nivå: den som först nådde
   // nivåns mål i sin grupp (goatWinner beräknas i buildChallengeState).
+  // En ensam i sin tier räknar som grupp på 1.
   const goatBadge = GOAT_BADGE_BY_GOAL.get(state.chosenTier);
-  if (goatBadge && state.groupSize >= 2 && state.goatWinner === state.userId) {
+  if (goatBadge && state.groupSize >= 1 && state.goatWinner === state.userId) {
     earned.add(goatBadge);
   }
 

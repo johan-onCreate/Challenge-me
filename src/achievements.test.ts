@@ -601,7 +601,8 @@ describe("buildChallengeState", () => {
     expect(state.goatWinner).toBe("u-fast");
   });
 
-  it("leaves the GOAT winner null without a real group or goat goal", () => {
+  it("leaves the GOAT winner null when the goal is unreached or the tier has no goat badge", () => {
+    // Ensam i tiern men inte uppe i målet (60 < 1 000) → ingen vinnare
     const solo = buildChallengeState({
       ...input,
       tierParticipants: [{ userId: "u-me", dayTotals: input.userDayTotals }],
@@ -616,6 +617,16 @@ describe("buildChallengeState", () => {
       ],
     });
     expect(customTier.goatWinner).toBeNull();
+  });
+
+  it("lets a solo tier member become the GOAT winner", () => {
+    const solo = buildChallengeState({
+      ...input,
+      tierParticipants: [
+        { userId: "u-me", dayTotals: days([["2026-10-01", 1000]]) },
+      ],
+    });
+    expect(solo.goatWinner).toBe("u-me");
   });
 
   it("flags windowComplete only after the end date", () => {
@@ -956,14 +967,24 @@ describe("evaluate", () => {
     expect(has(evaluate(silver), "goat.bronze")).toEqual([false]);
   });
 
-  it("never grants a goat badge without a real group", () => {
+  it("grants the goat badge to a solo tier member who reaches the goal", () => {
     const solo = makeState({
       userId: "u-me",
       chosenTier: 1000,
       groupSize: 1,
       goatWinner: "u-me",
     });
-    expect(has(evaluate(solo), "goat.bronze")).toEqual([false]);
+    expect(has(evaluate(solo), "goat.bronze")).toEqual([true]);
+  });
+
+  it("never grants a goat badge without any participants", () => {
+    const empty = makeState({
+      userId: "u-me",
+      chosenTier: 1000,
+      groupSize: 0,
+      goatWinner: "u-me",
+    });
+    expect(has(evaluate(empty), "goat.bronze")).toEqual([false]);
   });
 
   it("grants nothing for an empty state", () => {
