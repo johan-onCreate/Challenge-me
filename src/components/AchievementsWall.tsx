@@ -158,12 +158,15 @@ interface AchievementsWallProps {
   userId: string;
   isOwn: boolean;
   challenge: WallChallenge | null;
+  /** Ägarens etikett i rubriken: "Mina" eller namnet, t.ex. "Tobbe". */
+  ownerLabel?: string;
 }
 
 export default function AchievementsWall({
   userId,
   isOwn,
   challenge,
+  ownerLabel = "Mina",
 }: AchievementsWallProps) {
   const [data, setData] = useState<WallData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -260,7 +263,9 @@ export default function AchievementsWall({
     <div className="space-y-6 animate-fade-in">
       <div>
         <h3 className="text-xl font-bold tracking-tight text-content">
-          Priser 🏆
+          {isOwn
+            ? "Mina priser 🏆"
+            : `${ownerLabel}${ownerLabel.endsWith("s") ? "s" : ":s"} priser 🏆`}
         </h3>
         <p className="mt-0.5 text-xs text-content-faint">
           {challenge.title} — badgar för just den här utmaningen.

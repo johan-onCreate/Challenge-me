@@ -612,14 +612,14 @@ function Profile() {
 
   return (
     <div className="space-y-8 animate-fade-in">
-      {/* Total XP Scoreboard */}
-      <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white p-6 rounded-2xl shadow-md flex justify-between items-center">
+      {/* Total XP Scoreboard (följer valt tema) */}
+      <div className="bg-raised border border-outline-soft p-6 rounded-2xl shadow-md flex justify-between items-center">
         <div>
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+          <p className="text-xs font-semibold text-content-faint uppercase tracking-wider">
             Din totala poäng
           </p>
-          <h3 className="text-3xl font-extrabold text-amber-400 mt-1">
-            {totalPoints} XP
+          <h3 className="text-3xl font-extrabold text-content mt-1">
+            {totalPoints} <span className="text-warning">XP</span>
           </h3>
         </div>
       </div>

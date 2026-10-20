@@ -52,8 +52,8 @@ describe("BadgeCard", () => {
 
   it("renders a locked badge with hint and no progress", () => {
     const html = renderToString(<BadgeCard achievement={sloth} state="locked" />);
-    expect(html).toContain("Lazy Sloth");
-    expect(html).toContain("Exakt 1 rep på en dag");
+    expect(html).toContain("One Small Step for Squatkind");
+    expect(html).toContain("Logga exakt 1 squat under en dag.");
     expect(html).not.toContain("✓");
   });
 });
