@@ -468,6 +468,51 @@ function Profile() {
     }
   };
 
+  // Quick-logga för idag (+10 / +20) utan att fylla i formuläret
+  const handleQuickLogToday = async (amount: number) => {
+    if (!isCurrentCompleted || !currentChallenge) return;
+
+    if (
+      !isAllowedLogDate(
+        todayDate,
+        toDateKey(currentChallenge.start_date),
+        toDateKey(currentChallenge.end_date),
+        todayDate,
+      )
+    ) {
+      return;
+    }
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user || !currentChallenge) return;
+
+    const { data: existingLog } = await supabase
+      .from("challenge_logs")
+      .select("amount")
+      .eq("user_id", user.id)
+      .eq("challenge_id", currentChallenge.id)
+      .eq("logged_at", todayDate)
+      .maybeSingle();
+
+    const newAmount = existingLog ? existingLog.amount + amount : amount;
+
+    const { error } = await supabase.from("challenge_logs").upsert(
+      {
+        user_id: user.id,
+        challenge_id: currentChallenge.id,
+        amount: newAmount,
+        logged_at: todayDate,
+      },
+      { onConflict: "user_id,challenge_id,logged_at" },
+    );
+
+    if (!error) {
+      fetchChallengeLogs(user.id, currentChallenge.id, true);
+    }
+  };
+
   // NYTT: Spara en ändrad historisk logg
   const handleUpdateLog = async (logId: number) => {
     if (!isCurrentCompleted || !currentChallenge) return;
@@ -917,6 +962,22 @@ function Profile() {
                       className="w-full bg-btn hover:bg-btn-hover text-on-btn font-semibold py-2 rounded-xl text-sm transition-colors"
                     >
                       Logga reps
+                    </button>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleQuickLogToday(10)}
+                      className="flex-1 bg-inset hover:bg-raised border border-outline text-content-secondary font-semibold py-1.5 rounded-xl text-sm transition-colors"
+                    >
+                      +10 reps
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleQuickLogToday(20)}
+                      className="flex-1 bg-inset hover:bg-raised border border-outline text-content-secondary font-semibold py-1.5 rounded-xl text-sm transition-colors"
+                    >
+                      +20 reps
                     </button>
                   </div>
                 </form>
