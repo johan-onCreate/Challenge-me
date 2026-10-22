@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS public.user_achievements (
 ALTER TABLE public.achievements DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_achievements DISABLE ROW LEVEL SECURITY;
 
--- 3. SEED: 26 badgar (ON CONFLICT gör att filen kan köras om)
+-- 3. SEED: 44 badgar (ON CONFLICT gör att filen kan köras om)
 INSERT INTO public.achievements (id, family, title, hint, emoji, goal, sort_order) VALUES
   ('streak.7',             'streak',  'A Week… What a Week',                 '7 dagar i rad',                        '🔥',  NULL,    1),
   ('streak.14',            'streak',  'Two Weeks of Mild Insanity',          '14 dagar i rad',                       '🔥',  NULL,    2),
@@ -52,7 +52,7 @@ INSERT INTO public.achievements (id, family, title, hint, emoji, goal, sort_orde
   ('comp.plot_twist',      'comp',    'The Plot Twist',                      'Bottenhalvan i halvtid → topp 3 i mål','🎬',  NULL,    15),
   ('comp.three_week_tyrant','comp',   'Three-Week Tyrant',                   'Topp 3 i din grupp, tre veckor i rad', '👑',  NULL,    16),
   ('comp.throne',          'comp',    'Take the Throne',                     'Etta i din grupp när utmaningen slutar','🏰',  NULL,    17),
-  ('troll.1',              'troll',   'Lazy Sloth',                          'Exakt 1 rep på en dag',                '🦥',  NULL,    18),
+  ('troll.1',              'troll',   'One Small Step for Squatkind',        'Logga exakt 1 squat under en dag.',  '🦥',  NULL,    18),
   ('troll.2',              'troll',   'Now You''re Just Messing With Me',    'Exakt 2 reps på en dag',               '😤',  NULL,    19),
   ('troll.3',              'troll',   'That''s How It''s Gonna Be, Huh?!',   'Exakt 3 reps på en dag',               '😠',  NULL,    20),
   ('troll.42',             'troll',   'The Answer to Everything',            'Exakt 42 reps på en dag',              '🎰',  NULL,    21),
@@ -60,12 +60,34 @@ INSERT INTO public.achievements (id, family, title, hint, emoji, goal, sort_orde
   ('xp.100',               'special', 'Baby XP',                             '100 XP i utmaningen',                  '⭐',  NULL,    23),
   ('day.combo',            'special', 'Rolling Thunder',                     '3 dagar i rad med ökande reps',        '🌪️', NULL,    24),
   ('date.dec24',           'special', 'Santa''s Rep List',                   'Logga en dag den 24 december',         '🎅',  NULL,    25),
-  ('day.monster',          'special', 'Monster Day',                         '250+ reps på en enda dag',             '🌋',  NULL,    26)
+  ('day.monster',          'special', 'Monster Day',                         '250+ reps på en enda dag',             '🌋',  NULL,    26),
+  ('streak.const3',        'streak',  'Groundhog Day',                       'Exakt samma antal reps 3 dagar i rad', '🦫',  NULL,    27),
+  ('streak.const7',        'streak',  'The Consistency Paradox',             'Exakt samma antal reps 7 dagar i rad', '🎲',  NULL,    28),
+  ('volume.soreness',      'volume',  'Seven Days of Soreness',              'Minst 1 500 reps över 7 dagar i rad',  '🍖',  NULL,    29),
+  ('day.quadfather',       'special', 'The Quadfather',                      '1 000 reps på en enda dag',            '🦣',  NULL,    30),
+  ('troll.404',            'troll',   '404: Legs Not Found',                 'Exakt 404 reps på en dag',             '🫠',  NULL,    31),
+  ('troll.999',            'troll',   'Unfinished Business',                 'Exakt 999 reps på en dag',             '😮',  NULL,    32),
+  ('troll.1337',           'troll',   'LEET squatter',                       'Exakt 1 337 reps på en dag',           '🥷',  NULL,    33),
+  ('troll.6969',           'troll',   'Nice.',                               'Exakt 6 969 totala reps — stanna där den dagen!', '😏', NULL, 34),
+  ('troll.depression',     'troll',   'The Great Squat Depression',          '3 dagar i rad med 0 loggade reps',     '🌧️',  NULL,    35),
+  ('date.halloween',       'special', 'Nightmare on Squat Street',           'Logga en dag på Halloween',            '🎃',  NULL,    36),
+  ('date.blackfriday',     'special', 'Black Friday Burn',                   'Minst 250 reps på Black Friday',       '🛒',  NULL,    37),
+  ('day.comeback',         'special', 'The Comeback Kid',                    'Logga igen efter minst 7 dagar utan reps', '🔄', NULL, 38),
+  ('day.redemption',       'special', 'The Slacker''s Redemption',           'Minst 100 reps på en dag efter 3 nolldagar', '⚡', NULL, 39),
+  ('goat.bronze',          'goat',    'GOAT',                                'Först i din grupp till 1 000 totala reps', '🐐', 1000,  40),
+  ('goat.silver',          'goat',    'GOATer',                              'Först i din grupp till 3 333 totala reps', '🐐', 3333,  41),
+  ('goat.gold',            'goat',    'GOATest',                             'Först i din grupp till 6 666 totala reps', '🐐', 6666,  42),
+  ('goat.platinum',        'goat',    'GOATerer',                            'Först i din grupp till 10 000 totala reps', '🐐', 10000, 43),
+  ('goat.mythic',          'goat',    'GOATedest',                           'Först i din grupp till 20 000 totala reps', '🐐', 20000, 44)
 ON CONFLICT (id) DO NOTHING;
 
--- 4. SYNC: ascent-hintarna ändrades (ren volym, oavsett nivå).
---    ON CONFLICT DO NOTHING ovan uppdaterar inte befintliga rader,
---    så dessa UPDATE:er håller katalogen i databasen i synk. Idempotenta.
+-- 4. SYNC: ON CONFLICT DO NOTHING ovan uppdaterar inte befintliga
+--    rader, så dessa UPDATE:er håller katalogen i databasen i synk.
+--    Idempotenta.
+UPDATE public.achievements
+SET title = 'One Small Step for Squatkind',
+    hint = 'Logga exakt 1 squat under en dag.'
+WHERE id = 'troll.1';
 UPDATE public.achievements SET hint = '1 000 totala reps'  WHERE id = 'ascent.bronze';
 UPDATE public.achievements SET hint = '3 333 totala reps'  WHERE id = 'ascent.silver';
 UPDATE public.achievements SET hint = '6 666 totala reps'  WHERE id = 'ascent.gold';

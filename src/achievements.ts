@@ -16,7 +16,8 @@ export type AchievementFamily =
   | "ascent"
   | "comp"
   | "troll"
-  | "special";
+  | "special"
+  | "goat";
 
 export interface Achievement {
   id: string;
@@ -46,7 +47,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
   { id: "comp.plot_twist", family: "comp", title: "The Plot Twist", hint: "Bottenhalvan i halvtid → topp 3 i mål", emoji: "🎬", goal: null, sortOrder: 15 },
   { id: "comp.three_week_tyrant", family: "comp", title: "Three-Week Tyrant", hint: "Topp 3 i din grupp, tre veckor i rad", emoji: "👑", goal: null, sortOrder: 16 },
   { id: "comp.throne", family: "comp", title: "Take the Throne", hint: "Etta i din grupp när utmaningen slutar", emoji: "🏰", goal: null, sortOrder: 17 },
-  { id: "troll.1", family: "troll", title: "Lazy Sloth", hint: "Exakt 1 rep på en dag", emoji: "🦥", goal: null, sortOrder: 18 },
+  { id: "troll.1", family: "troll", title: "One Small Step for Squatkind", hint: "Logga exakt 1 squat under en dag.", emoji: "🦥", goal: null, sortOrder: 18 },
   { id: "troll.2", family: "troll", title: "Now You're Just Messing With Me", hint: "Exakt 2 reps på en dag", emoji: "😤", goal: null, sortOrder: 19 },
   { id: "troll.3", family: "troll", title: "That's How It's Gonna Be, Huh?!", hint: "Exakt 3 reps på en dag", emoji: "😠", goal: null, sortOrder: 20 },
   { id: "troll.42", family: "troll", title: "The Answer to Everything", hint: "Exakt 42 reps på en dag", emoji: "🎰", goal: null, sortOrder: 21 },
@@ -55,6 +56,24 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
   { id: "day.combo", family: "special", title: "Rolling Thunder", hint: "3 dagar i rad med ökande reps", emoji: "🌪️", goal: null, sortOrder: 24 },
   { id: "date.dec24", family: "special", title: "Santa's Rep List", hint: "Logga en dag den 24 december", emoji: "🎅", goal: null, sortOrder: 25 },
   { id: "day.monster", family: "special", title: "Monster Day", hint: "250+ reps på en enda dag", emoji: "🌋", goal: null, sortOrder: 26 },
+  { id: "streak.const3", family: "streak", title: "Groundhog Day", hint: "Exakt samma antal reps 3 dagar i rad", emoji: "🦫", goal: null, sortOrder: 27 },
+  { id: "streak.const7", family: "streak", title: "The Consistency Paradox", hint: "Exakt samma antal reps 7 dagar i rad", emoji: "🎲", goal: null, sortOrder: 28 },
+  { id: "volume.soreness", family: "volume", title: "Seven Days of Soreness", hint: "Minst 1 500 reps över 7 dagar i rad", emoji: "🍖", goal: null, sortOrder: 29 },
+  { id: "day.quadfather", family: "special", title: "The Quadfather", hint: "1 000 reps på en enda dag", emoji: "🦣", goal: null, sortOrder: 30 },
+  { id: "troll.404", family: "troll", title: "404: Legs Not Found", hint: "Exakt 404 reps på en dag", emoji: "🫠", goal: null, sortOrder: 31 },
+  { id: "troll.999", family: "troll", title: "Unfinished Business", hint: "Exakt 999 reps på en dag", emoji: "😮", goal: null, sortOrder: 32 },
+  { id: "troll.1337", family: "troll", title: "LEET squatter", hint: "Exakt 1 337 reps på en dag", emoji: "🥷", goal: null, sortOrder: 33 },
+  { id: "troll.6969", family: "troll", title: "Nice.", hint: "Exakt 6 969 totala reps — stanna där den dagen!", emoji: "😏", goal: null, sortOrder: 34 },
+  { id: "troll.depression", family: "troll", title: "The Great Squat Depression", hint: "3 dagar i rad med 0 loggade reps", emoji: "🌧️", goal: null, sortOrder: 35 },
+  { id: "date.halloween", family: "special", title: "Nightmare on Squat Street", hint: "Logga en dag på Halloween", emoji: "🎃", goal: null, sortOrder: 36 },
+  { id: "date.blackfriday", family: "special", title: "Black Friday Burn", hint: "Minst 250 reps på Black Friday", emoji: "🛒", goal: null, sortOrder: 37 },
+  { id: "day.comeback", family: "special", title: "The Comeback Kid", hint: "Logga igen efter minst 7 dagar utan reps", emoji: "🔄", goal: null, sortOrder: 38 },
+  { id: "day.redemption", family: "special", title: "The Slacker's Redemption", hint: "Minst 100 reps på en dag efter 3 nolldagar", emoji: "⚡", goal: null, sortOrder: 39 },
+  { id: "goat.bronze", family: "goat", title: "GOAT", hint: "Först i din grupp till 1 000 totala reps", emoji: "🐐", goal: 1000, sortOrder: 40 },
+  { id: "goat.silver", family: "goat", title: "GOATer", hint: "Först i din grupp till 3 333 totala reps", emoji: "🐐", goal: 3333, sortOrder: 41 },
+  { id: "goat.gold", family: "goat", title: "GOATest", hint: "Först i din grupp till 6 666 totala reps", emoji: "🐐", goal: 6666, sortOrder: 42 },
+  { id: "goat.platinum", family: "goat", title: "GOATerer", hint: "Först i din grupp till 10 000 totala reps", emoji: "🐐", goal: 10000, sortOrder: 43 },
+  { id: "goat.mythic", family: "goat", title: "GOATedest", hint: "Först i din grupp till 20 000 totala reps", emoji: "🐐", goal: 20000, sortOrder: 44 },
 ];
 
 export const ACHIEVEMENT_BY_ID: ReadonlyMap<string, Achievement> = new Map(
@@ -72,12 +91,45 @@ export const FAMILIES: ReadonlyArray<{
   { id: "comp", label: "Tävlan" },
   { id: "troll", label: "Trolling" },
   { id: "special", label: "Special" },
+  { id: "goat", label: "GOAT" },
 ];
 
 /** Santa's Rep List — byts ut en gång per år. */
 export const DEC_24_KEY = "2026-12-24";
+/** Nightmare on Squat Street — byts ut en gång per år. */
+export const HALLOWEEN_KEY = "2026-10-31";
+/** Black Friday Burn — fjärde fredagen i november, byts ut en gång per år. */
+export const BLACK_FRIDAY_KEY = "2026-11-27";
+export const BLACK_FRIDAY_TARGET = 250;
 export const MONSTER_DAY_TARGET = 250;
 export const MYTHIC_TARGET = 20_000;
+/** The Quadfather — 1 000 reps på en enda dag. */
+export const QUADFATHER_TARGET = 1000;
+/** Seven Days of Soreness — minst 1 500 reps över 7 på varandra följande dagar. */
+export const SORENESS_TARGET = 1500;
+export const SORENESS_WINDOW_DAYS = 7;
+/** The Great Squat Depression — 3 raka nolldagar efter minst en loggad dag. */
+export const SQUAT_DEPRESSION_DAYS = 3;
+/** The Comeback Kid — logga igen efter minst 7 raka nolldagar. */
+export const COMEBACK_GAP_DAYS = 7;
+/** The Slacker's Redemption — minst 100 reps på en dag efter 3 raka nolldagar. */
+export const REDEMPTION_GAP_DAYS = 3;
+export const REDEMPTION_TARGET = 100;
+/** Nice. — exakt 6 969 totala reps (stanna där den dagen!). */
+export const NICE_TOTAL = 6969;
+/** Groundhog Day / The Consistency Paradox — raka dagar med identisk summa. */
+export const CONSTANT_RUN_SHORT = 3;
+export const CONSTANT_RUN_LONG = 7;
+
+/** GOAT-badges per tier-mål: ett badge per vald nivå, bara en mottagare per nivå. */
+export const GOAT_BADGE_BY_GOAL: ReadonlyMap<number, string> = new Map([
+  [1000, "goat.bronze"],
+  [3333, "goat.silver"],
+  [6666, "goat.gold"],
+  [10000, "goat.platinum"],
+  [20000, "goat.mythic"],
+]);
+
 export const TOTAL_BADGES = ACHIEVEMENTS.length;
 
 // ====================================================================
@@ -158,6 +210,113 @@ export function longestRisingRun(
     if (run > best) best = run;
   }
   return best;
+}
+
+/**
+ * Längsta sträckan med på varandra följande dagar med exakt samma
+ * (positiva) dagssumma. En ologgad dag bryter sträckan.
+ */
+export function longestConstantRun(
+  dayTotals: ReadonlyMap<string, number>,
+  startKey: string,
+  endKey: string,
+): number {
+  let best = 0;
+  let run = 0;
+  let previous: number | undefined;
+  for (const day of eachDay(startKey, endKey)) {
+    const amount = dayTotals.get(day);
+    if (amount === undefined) {
+      run = 0;
+      previous = undefined;
+    } else if (amount === previous) {
+      run += 1;
+    } else {
+      run = 1;
+      previous = amount;
+    }
+    if (run > best) best = run;
+  }
+  return best;
+}
+
+/** Högsta summan över ett rullande fönster med windowDays dagar. */
+export function maxRollingWindowTotal(
+  dayTotals: ReadonlyMap<string, number>,
+  startKey: string,
+  endKey: string,
+  windowDays: number,
+): number {
+  let best = 0;
+  for (const start of eachDay(startKey, endKey)) {
+    const winEnd = addDays(start, windowDays - 1);
+    if (winEnd > endKey) break;
+    let sum = 0;
+    for (const day of eachDay(start, winEnd)) {
+      sum += dayTotals.get(day) ?? 0;
+    }
+    if (sum > best) best = sum;
+  }
+  return best;
+}
+
+/**
+ * Längsta sträckan med på varandra följande OLOGGADE dagar som
+ * inleds efter minst en loggad dag (en helt "obörjad" start räknas
+ * inte som depression).
+ */
+export function longestZeroRunAfterLog(
+  dayTotals: ReadonlyMap<string, number>,
+  startKey: string,
+  endKey: string,
+): number {
+  let best = 0;
+  let run = 0;
+  let seenLog = false;
+  for (const day of eachDay(startKey, endKey)) {
+    if (dayTotals.has(day)) {
+      run = 0;
+      seenLog = true;
+    } else if (seenLog) {
+      run += 1;
+      if (run > best) best = run;
+    }
+  }
+  return best;
+}
+
+/**
+ * Finns en dag med minst minAmount reps, där exakt gapDays raka
+ * nolldagar ligger omedelbart före, och minst en loggad dag före
+ * gapet (hela gapet måste ligga i fönstret)?
+ */
+export function hasReturnAfterGap(
+  dayTotals: ReadonlyMap<string, number>,
+  startKey: string,
+  endKey: string,
+  gapDays: number,
+  minAmount: number,
+): boolean {
+  for (const [day, amount] of dayTotals) {
+    if (amount < minAmount) continue;
+    if (day < startKey || day > endKey) continue;
+    const gapStart = addDays(day, -gapDays);
+    if (gapStart < startKey) continue;
+    let allZero = true;
+    for (const d of eachDay(gapStart, addDays(day, -1))) {
+      if (dayTotals.has(d)) {
+        allZero = false;
+        break;
+      }
+    }
+    if (!allZero) continue;
+    let hasPriorLog = false;
+    dayTotals.forEach((_value, d) => {
+      if (d >= startKey && d < gapStart) hasPriorLog = true;
+    });
+    if (hasPriorLog) return true;
+  }
+  return false;
 }
 
 // ====================================================================
@@ -248,6 +407,43 @@ export function top3WeekEndStreak(
   return best;
 }
 
+/**
+ * Den som FÖRST når ackumulerade ≥ goal i gruppen (GOAT).
+ * Deterministiskt: tidigaste dag då någon passerar målet vinner;
+ * om fler än en passerar målet samma dag avgörs det med minsta userId
+ * (väggen har bara dagssummor, inga intradags-tidsstämplar).
+ * Null om ingen når målet.
+ */
+export function firstToReachGoal(
+  participants: ReadonlyArray<TierParticipant>,
+  goal: number,
+): string | null {
+  if (goal <= 0 || participants.length === 0) return null;
+  const daySet = new Set<string>();
+  participants.forEach((participant) => {
+    participant.dayTotals.forEach((_amount, day) => daySet.add(day));
+  });
+  const days = [...daySet].sort();
+  const cumulative = new Map<string, number>();
+  let winners: string[] = [];
+  for (const day of days) {
+    participants.forEach((participant) => {
+      const amount = participant.dayTotals.get(day) ?? 0;
+      cumulative.set(
+        participant.userId,
+        (cumulative.get(participant.userId) ?? 0) + amount,
+      );
+    });
+    if (winners.length === 0) {
+      winners = participants
+        .filter((participant) => (cumulative.get(participant.userId) ?? 0) >= goal)
+        .map((participant) => participant.userId);
+    }
+  }
+  if (winners.length === 0) return null;
+  return winners.sort()[0];
+}
+
 /** Mittenpunkt i utmaningen (start + (slut − start) / 2). */
 export function midpointKey(startKey: string, endKey: string): string {
   return addDays(startKey, Math.floor(diffDays(startKey, endKey) / 2));
@@ -262,6 +458,7 @@ export interface ChallengeState {
   startKey: string;
   endKey: string;
   todayKey: string;
+  userId: string;
   totalReps: number;
   earnedXp: number;
   longestStreak: number;
@@ -270,11 +467,19 @@ export interface ChallengeState {
   dayTotals: ReadonlyMap<string, number>;
   risingDays: number;
   maxDay: number;
+  /** Längsta sträckan med raka dagar med identisk dagssumma. */
+  constantDays: number;
+  /** Högsta summan över ett rullande 7-dagarsfönster. */
+  weekTotal: number;
+  /** Längsta sträckan med raka ologgade dagar efter minst en logg. */
+  maxZeroRun: number;
   chosenTier: number;
   groupSize: number;
   finalPlacement: number;
   midPlacement: number;
   top3WeekEnds: number;
+  /** userId som först nådde tier-målet i gruppen; null = ingen/okänd. */
+  goatWinner: string | null;
 }
 
 export interface BuildStateInput {
@@ -315,12 +520,22 @@ export function buildChallengeState(input: BuildStateInput): ChallengeState {
 
   const hasGroup = tierParticipants.length >= 2;
   const midKey = midpointKey(startKey, endKey);
+  const tierGoal = Number.parseInt(chosenTier, 10) || 0;
+  // GOAT: bara tier-nivåerna med eget GOAT-badge deltar. En ensam i sin
+  // tier kan fortfarande bli GOAT (först till målet = den enda).
+  // Snabbspåret (tierParticipants: []) ger alltså null — GOAT bedöms på
+  // prisväggen, som tävlingsbadgarna.
+  const goatWinner =
+    tierParticipants.length >= 1 && GOAT_BADGE_BY_GOAL.has(tierGoal)
+      ? firstToReachGoal(tierParticipants, tierGoal)
+      : null;
 
   return {
     challengeId,
     startKey,
     endKey,
     todayKey,
+    userId,
     totalReps,
     earnedXp: calculateEarnedPoints(totalReps, chosenTier, points),
     longestStreak: longestConsecutiveRun(loggedDays, startKey, activeEnd),
@@ -329,7 +544,15 @@ export function buildChallengeState(input: BuildStateInput): ChallengeState {
     dayTotals: userDayTotals,
     risingDays: longestRisingRun(userDayTotals, startKey, activeEnd),
     maxDay,
-    chosenTier: Number.parseInt(chosenTier, 10) || 0,
+    constantDays: longestConstantRun(userDayTotals, startKey, activeEnd),
+    weekTotal: maxRollingWindowTotal(
+      userDayTotals,
+      startKey,
+      activeEnd,
+      SORENESS_WINDOW_DAYS,
+    ),
+    maxZeroRun: longestZeroRunAfterLog(userDayTotals, startKey, activeEnd),
+    chosenTier: tierGoal,
     groupSize: tierParticipants.length,
     finalPlacement: hasGroup
       ? rankAtDate(tierParticipants, userId, activeEnd).placement
@@ -345,6 +568,7 @@ export function buildChallengeState(input: BuildStateInput): ChallengeState {
       endKey,
       todayKey,
     ),
+    goatWinner,
   };
 }
 
@@ -414,12 +638,62 @@ export function evaluate(state: ChallengeState): ReadonlySet<string> {
   grant("troll.3", hasDayAt(3));
   grant("troll.42", hasDayAt(42));
   grant("troll.666", hasDayAt(666));
+  grant("troll.404", hasDayAt(404));
+  grant("troll.999", hasDayAt(999));
+  grant("troll.1337", hasDayAt(1337));
+  // Nice. — exakt 6 969 totala; loggas fler reps tar priset ifrån
+  // (samordningen på väggen korrigerar, som övriga exakta badgar).
+  grant("troll.6969", state.totalReps === NICE_TOTAL);
+  // Depression — 3+ raka nolldagar EFTER minst en loggad dag.
+  grant("troll.depression", state.maxZeroRun >= SQUAT_DEPRESSION_DAYS);
+
+  // Streaker — konstanta dagar
+  grant("streak.const3", state.constantDays >= CONSTANT_RUN_SHORT);
+  grant("streak.const7", state.constantDays >= CONSTANT_RUN_LONG);
+
+  // Volym — rullande vecka
+  grant("volume.soreness", state.weekTotal >= SORENESS_TARGET);
 
   // Special
   grant("xp.100", state.earnedXp >= 100);
   grant("day.combo", state.risingDays >= 3);
   grant("date.dec24", state.dayTotals.has(DEC_24_KEY));
+  grant("date.halloween", state.dayTotals.has(HALLOWEEN_KEY));
+  grant(
+    "date.blackfriday",
+    (state.dayTotals.get(BLACK_FRIDAY_KEY) ?? 0) >= BLACK_FRIDAY_TARGET,
+  );
   grant("day.monster", state.maxDay >= MONSTER_DAY_TARGET);
+  grant("day.quadfather", state.maxDay >= QUADFATHER_TARGET);
+  // Comeback / redemption — kräver loggad dag EFTER gapet OCH innan.
+  grant(
+    "day.comeback",
+    hasReturnAfterGap(
+      state.dayTotals,
+      state.startKey,
+      state.endKey,
+      COMEBACK_GAP_DAYS,
+      1,
+    ),
+  );
+  grant(
+    "day.redemption",
+    hasReturnAfterGap(
+      state.dayTotals,
+      state.startKey,
+      state.endKey,
+      REDEMPTION_GAP_DAYS,
+      REDEMPTION_TARGET,
+    ),
+  );
+
+  // GOAT — bara en mottagare per vald nivå: den som först nådde
+  // nivåns mål i sin grupp (goatWinner beräknas i buildChallengeState).
+  // En ensam i sin tier räknar som grupp på 1.
+  const goatBadge = GOAT_BADGE_BY_GOAL.get(state.chosenTier);
+  if (goatBadge && state.groupSize >= 1 && state.goatWinner === state.userId) {
+    earned.add(goatBadge);
+  }
 
   return earned;
 }
@@ -457,6 +731,10 @@ export function progressFor(
       return { kind: "count", current: state.earnedXp, target: 100 };
     case "day.monster":
       return { kind: "count", current: state.maxDay, target: MONSTER_DAY_TARGET };
+    case "day.quadfather":
+      return { kind: "count", current: state.maxDay, target: QUADFATHER_TARGET };
+    case "volume.soreness":
+      return { kind: "count", current: state.weekTotal, target: SORENESS_TARGET };
     case "ascent.bronze":
     case "ascent.silver":
     case "ascent.gold":
@@ -464,6 +742,17 @@ export function progressFor(
     case "ascent.mythic": {
       const goal = ACHIEVEMENT_BY_ID.get(id)?.goal;
       if (!goal) return null;
+      return { kind: "count", current: state.totalReps, target: goal };
+    }
+    case "goat.bronze":
+    case "goat.silver":
+    case "goat.gold":
+    case "goat.platinum":
+    case "goat.mythic": {
+      const goal = ACHIEVEMENT_BY_ID.get(id)?.goal;
+      if (!goal) return null;
+      // Bara ditt egna nivåmål visar progress; övriga förblir låsta.
+      if (state.chosenTier !== goal) return null;
       return { kind: "count", current: state.totalReps, target: goal };
     }
     case "perfect.run":
@@ -484,7 +773,8 @@ export function progressFor(
         ? { kind: "text", text: `Du var #${state.midPlacement} i halvtid` }
         : null;
     default:
-      // troll.* och date.dec24 — hinten är skämmen, ingen progress
+      // troll.*, date.*, comeback/redemption, const-streakar —
+      // hinten är skämten (eller regeln är antingen/eller), ingen progress
       return null;
   }
 }

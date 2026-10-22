@@ -394,6 +394,8 @@ function StatsContent({ userId }: { userId?: string }) {
     selectedUserId: string;
     currentUserId: string;
     activeChallenge: WallChallenge | null;
+    /** null = egen profil; annars ägarens namn (alias eller fullt namn). */
+    ownerName: string | null;
   } | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -410,6 +412,7 @@ function StatsContent({ userId }: { userId?: string }) {
     if (!user) throw new Error("Ingen inloggad användare");
     const selectedUserId = userId || user.id;
     let selectedTitle = "Min statistik";
+    let ownerName: string | null = null;
 
     if (selectedUserId !== user.id) {
       const { data: profile, error: profileError } = await supabase
@@ -419,9 +422,8 @@ function StatsContent({ userId }: { userId?: string }) {
         .maybeSingle();
       if (profileError) throw profileError;
       if (!profile) throw new Error("Användaren hittades inte");
-      selectedTitle = `${
-        profile.alias || profile.full_name || "Användarens"
-      } statistik`;
+      ownerName = profile.alias || profile.full_name || "Användaren";
+      selectedTitle = `${ownerName} statistik`;
     }
 
     const { data: userChallenges, error: userChallengesError } = await supabase
@@ -490,6 +492,7 @@ function StatsContent({ userId }: { userId?: string }) {
         selectedUserId,
         currentUserId: user.id,
         activeChallenge,
+        ownerName,
       },
     };
   }, [userId]);
@@ -585,6 +588,7 @@ function StatsContent({ userId }: { userId?: string }) {
           userId={wallInfo.selectedUserId}
           isOwn={wallInfo.selectedUserId === wallInfo.currentUserId}
           challenge={wallInfo.activeChallenge}
+          ownerLabel={wallInfo.ownerName ?? "Mina"}
         />
       )}
     </div>

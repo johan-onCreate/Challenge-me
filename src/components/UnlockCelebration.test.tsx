@@ -19,7 +19,7 @@ describe("UnlockCelebration", () => {
       />,
     );
     expect(html).toContain("Ny pris! 🎉");
-    expect(html).toContain("Lazy Sloth");
+    expect(html).toContain("One Small Step for Squatkind");
     expect(html).not.toContain("Imp");
   });
 

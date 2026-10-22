@@ -39,7 +39,7 @@ describe("WallGrid", () => {
     },
   ];
 
-  it("renders all 26 badges grouped under family headers", () => {
+  it("renders all 44 badges grouped under family headers", () => {
     const html = renderToString(
       <WallGrid badges={buildWallBadges(state, owned)} />,
     );
@@ -51,6 +51,7 @@ describe("WallGrid", () => {
       "Tävlan",
       "Trolling",
       "Special",
+      "GOAT",
     ]) {
       expect(html).toContain(label);
     }
@@ -60,12 +61,31 @@ describe("WallGrid", () => {
       "The Dinosaur",
       "Mythic: Who Even Are You",
       "Take the Throne",
-      "Lazy Sloth",
+      "One Small Step for Squatkind",
       "Imp",
       "Baby XP",
       "Santa",
       "Rep List",
       "Monster Day",
+      "The Quadfather",
+      "Seven Days of Soreness",
+      "Groundhog Day",
+      "The Consistency Paradox",
+      "404: Legs Not Found",
+      "Unfinished Business",
+      "LEET squatter",
+      "Nice.",
+      "The Great Squat Depression",
+      "Nightmare on Squat Street",
+      "Black Friday Burn",
+      "The Comeback Kid",
+      "The Slacker",
+      "Redemption",
+      "GOAT",
+      "GOATer",
+      "GOATest",
+      "GOATerer",
+      "GOATedest",
     ]) {
       expect(html).toContain(title);
     }
@@ -75,7 +95,7 @@ describe("WallGrid", () => {
     const html = renderToString(
       <WallGrid badges={buildWallBadges(state, owned)} />,
     );
-    expect(html).toContain("Lazy Sloth");
+    expect(html).toContain("One Small Step for Squatkind");
     expect(html).toContain("✓");
   });
 });
