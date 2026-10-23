@@ -11,6 +11,7 @@ import AdminChallenges from "./AdminChallenges";
 import Leaderboard from "./Leaderboard";
 import ThemeSwitcher from "./ThemeSwitcher";
 import AnnouncementToast from "./components/AnnouncementToast";
+import ScrollToTop from "./ScrollToTop";
 
 const Stats = lazy(() => import("./Stats"));
 
@@ -77,6 +78,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-surface pb-12">
+      <ScrollToTop />
       {/* Header */}
       <header className="bg-raised border-b border-outline sticky top-0 z-50 shadow-sm">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 min-h-16 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">

@@ -988,7 +988,7 @@ function Profile() {
                     <label className="block text-xs font-bold uppercase tracking-wider text-content-faint">
                       Dina registrerade loggar
                     </label>
-                    <div className="max-h-40 overflow-y-auto space-y-1.5 border border-outline-soft rounded-xl p-2 bg-inset/50">
+                    <div className="max-h-56 overflow-y-auto space-y-1.5 border border-outline-soft rounded-xl p-2 bg-inset/50">
                       {dailyLogs.map((log) => (
                         <div
                           key={log.id}

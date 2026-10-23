@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import {
   getChallengeDates,
   getIsoWeekNumber,
@@ -60,6 +61,20 @@ export default function ChallengeCalendar({
 }: ChallengeCalendarProps) {
   const dates = getChallengeDates(startDate, endDate);
   const cells = buildCalendarCells(dates);
+  const mobileContainerRef = useRef<HTMLDivElement>(null);
+  const todayButtonRef = useRef<HTMLButtonElement>(null);
+  const todayPanelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const container = mobileContainerRef.current;
+    if (!container) return;
+    const target = todayPanelRef.current ?? todayButtonRef.current;
+    if (target) {
+      container.scrollTop =
+        target.offsetTop -
+        container.clientHeight / 2 +
+        target.clientHeight / 2;
+    }
+  }, []);
   const monthLabel = `${formatDate(startDate, {
     month: "long",
     year: "numeric",
@@ -79,7 +94,10 @@ export default function ChallengeCalendar({
         </span>
       </div>
 
-      <div className="grid grid-cols-1 gap-2 sm:hidden">
+      <div
+        ref={mobileContainerRef}
+        className="relative grid max-h-[420px] grid-cols-1 gap-2 overflow-y-auto sm:hidden"
+      >
         {cells.map((cell, index) => {
           if (cell.type === "week") {
             return (
@@ -108,6 +126,7 @@ export default function ChallengeCalendar({
             return (
               <div
                 key={date}
+                ref={isToday ? todayPanelRef : undefined}
                 className="rounded-xl border border-accent-soft-border bg-accent-soft p-3"
               >
                 <p className="text-base font-bold capitalize text-accent-soft-text">
@@ -147,6 +166,7 @@ export default function ChallengeCalendar({
           return (
             <button
               key={date}
+              ref={isToday ? todayButtonRef : undefined}
               type="button"
               disabled={isFuture}
               onClick={() => onSelectDate(date, loggedAmount)}
