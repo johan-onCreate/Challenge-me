@@ -753,6 +753,57 @@ function Profile() {
                   </div>
                 )}
 
+                {/* Loggningsformulär */}
+                <form
+                  onSubmit={handleLogDailyProgress}
+                  className="space-y-3 bg-inset p-4 rounded-xl border border-outline-soft"
+                >
+                  <span className="block text-xs font-bold uppercase tracking-wider text-content-muted">
+                    Logga aktivitet
+                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <input
+                      type="date"
+                      value={logDate}
+                      min={minDate}
+                      max={maxLogDate}
+                      onChange={(e) => setLogDate(e.target.value)}
+                      required
+                      className="w-full px-3 py-2 border border-outline rounded-xl text-sm bg-raised"
+                    />
+                    <input
+                      type="number"
+                      value={logAmount}
+                      onChange={(e) => setLogAmount(e.target.value)}
+                      placeholder="Antal reps"
+                      required
+                      className="w-full px-3 py-2 border border-outline rounded-xl text-sm bg-raised"
+                    />
+                    <button
+                      type="submit"
+                      className="w-full bg-btn hover:bg-btn-hover text-on-btn font-semibold py-2 rounded-xl text-sm transition-colors"
+                    >
+                      Logga reps
+                    </button>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleQuickLogToday(10)}
+                      className="flex-1 bg-inset hover:bg-raised border border-outline text-content-secondary font-semibold py-1.5 rounded-xl text-sm transition-colors"
+                    >
+                      +10 reps
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleQuickLogToday(20)}
+                      className="flex-1 bg-inset hover:bg-raised border border-outline text-content-secondary font-semibold py-1.5 rounded-xl text-sm transition-colors"
+                    >
+                      +20 reps
+                    </button>
+                  </div>
+                </form>
+
                 {challengeDates.length > 0 && (
                   <div className="hidden space-y-3 bg-inset p-4 rounded-xl border border-outline-soft">
                     <div className="flex flex-wrap items-center justify-between gap-2">
@@ -870,51 +921,6 @@ function Profile() {
                   </div>
                 )}
 
-                {currentChallenge.tiers &&
-                  currentChallenge.tiers.length > 0 && (
-                    <div className="bg-inset p-4 rounded-xl border border-outline-soft space-y-3">
-                      <label className="block text-xs font-bold uppercase tracking-wider text-content-muted">
-                        Ändra nivå
-                      </label>
-                      <div className="flex flex-wrap gap-4">
-                        {currentChallenge.tiers.map((tier, index) => (
-                          <label
-                            key={index}
-                            className="flex items-center gap-1.5 text-sm font-medium text-content-secondary cursor-pointer"
-                          >
-                            <input
-                              type="radio"
-                              name="saved-tier"
-                              value={tier}
-                              checked={chosenTier === tier}
-                              onChange={(e) => {
-                                setChosenTier(e.target.value);
-                                setTierMessage("");
-                              }}
-                              className="text-accent"
-                            />
-                            {tier}
-                          </label>
-                        ))}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={handleChangeTier}
-                        disabled={tierLoading || chosenTier === savedTier}
-                        className="w-full bg-accent hover:bg-accent-hover text-white font-semibold py-2 rounded-xl text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {tierLoading ? "Sparar..." : "Spara ny nivå"}
-                      </button>
-                      {tierMessage && (
-                        <p
-                          className={`text-xs font-medium ${tierMessage.startsWith("Fel") ? "text-danger" : "text-success-strong"}`}
-                        >
-                          {tierMessage}
-                        </p>
-                      )}
-                    </div>
-                  )}
-
                 {/* Progress Bar */}
                 <div className="space-y-1.5">
                   <div className="flex justify-between text-xs font-bold text-content-muted uppercase">
@@ -930,57 +936,6 @@ function Profile() {
                     />
                   </div>
                 </div>
-
-                {/* Loggningsformulär */}
-                <form
-                  onSubmit={handleLogDailyProgress}
-                  className="space-y-3 bg-inset p-4 rounded-xl border border-outline-soft"
-                >
-                  <span className="block text-xs font-bold uppercase tracking-wider text-content-muted">
-                    Logga aktivitet
-                  </span>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    <input
-                      type="date"
-                      value={logDate}
-                      min={minDate}
-                      max={maxLogDate}
-                      onChange={(e) => setLogDate(e.target.value)}
-                      required
-                      className="w-full px-3 py-2 border border-outline rounded-xl text-sm bg-raised"
-                    />
-                    <input
-                      type="number"
-                      value={logAmount}
-                      onChange={(e) => setLogAmount(e.target.value)}
-                      placeholder="Antal reps"
-                      required
-                      className="w-full px-3 py-2 border border-outline rounded-xl text-sm bg-raised"
-                    />
-                    <button
-                      type="submit"
-                      className="w-full bg-btn hover:bg-btn-hover text-on-btn font-semibold py-2 rounded-xl text-sm transition-colors"
-                    >
-                      Logga reps
-                    </button>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleQuickLogToday(10)}
-                      className="flex-1 bg-inset hover:bg-raised border border-outline text-content-secondary font-semibold py-1.5 rounded-xl text-sm transition-colors"
-                    >
-                      +10 reps
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleQuickLogToday(20)}
-                      className="flex-1 bg-inset hover:bg-raised border border-outline text-content-secondary font-semibold py-1.5 rounded-xl text-sm transition-colors"
-                    >
-                      +20 reps
-                    </button>
-                  </div>
-                </form>
 
                 {/* HISTORIK MED REDIGERINGSFUNKTIONER */}
                 {dailyLogs.length > 0 && (
@@ -1218,6 +1173,56 @@ function Profile() {
           </div>
         </section>
       )}
+
+      {/* Ändra nivå (aktiv utmaning) */}
+      {currentChallenge &&
+        isCurrentCompleted &&
+        currentChallenge.tiers &&
+        currentChallenge.tiers.length > 0 && (
+          <div className="border-t border-outline-soft pt-6">
+            <div className="bg-inset p-4 rounded-xl border border-outline-soft space-y-3">
+              <label className="block text-xs font-bold uppercase tracking-wider text-content-muted">
+                Ändra nivå
+              </label>
+              <div className="flex flex-wrap gap-4">
+                {currentChallenge.tiers.map((tier, index) => (
+                  <label
+                    key={index}
+                    className="flex items-center gap-1.5 text-sm font-medium text-content-secondary cursor-pointer"
+                  >
+                    <input
+                      type="radio"
+                      name="saved-tier"
+                      value={tier}
+                      checked={chosenTier === tier}
+                      onChange={(e) => {
+                        setChosenTier(e.target.value);
+                        setTierMessage("");
+                      }}
+                      className="text-accent"
+                    />
+                    {tier}
+                  </label>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={handleChangeTier}
+                disabled={tierLoading || chosenTier === savedTier}
+                className="w-full bg-accent hover:bg-accent-hover text-white font-semibold py-2 rounded-xl text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {tierLoading ? "Sparar..." : "Spara ny nivå"}
+              </button>
+              {tierMessage && (
+                <p
+                  className={`text-xs font-medium ${tierMessage.startsWith("Fel") ? "text-danger" : "text-success-strong"}`}
+                >
+                  {tierMessage}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
 
       {/* Profilinställningar */}
       <div className="space-y-4 border-t border-outline-soft pt-6">
