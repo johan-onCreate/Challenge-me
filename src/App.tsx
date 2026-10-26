@@ -12,6 +12,15 @@ import Leaderboard from "./Leaderboard";
 import ThemeSwitcher from "./ThemeSwitcher";
 import AnnouncementToast from "./components/AnnouncementToast";
 import ScrollToTop from "./ScrollToTop";
+import SeasonalDecor from "./components/SeasonalDecor";
+import {
+  getInitialTheme,
+  getMotionOverride,
+  isSeasonalTheme,
+  setMotionOverride,
+  setTheme,
+} from "./theme";
+import type { ThemeName } from "./theme";
 
 const Stats = lazy(() => import("./Stats"));
 
@@ -23,6 +32,43 @@ function App() {
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
+  // Temat (inkl. säsongsteman) är per enhet – localStorage via theme.ts
+  const [theme, setThemeState] = useState<ThemeName>(() => getInitialTheme());
+  // Override för systemets reduced-motion: vill användaren ha
+  // säsongsanimationerna även om OS:et pauserar animationer?
+  const [motionOverride, setMotionOverrideState] = useState<boolean>(() =>
+    getMotionOverride(),
+  );
+  const [reducedMotion, setReducedMotion] = useState<boolean>(
+    () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+  );
+
+  const selectTheme = (next: ThemeName) => {
+    setTheme(next);
+    setThemeState(next);
+  };
+
+  // Override-klassen på <html> styr CSS:et (se reduced-motion-blocket i index.css)
+  useEffect(() => {
+    document.documentElement.classList.toggle(
+      "seasonal-motion-override",
+      motionOverride,
+    );
+  }, [motionOverride]);
+
+  // Följ systeminställningen live (utan omstart)
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const onChange = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+
+  const toggleMotionOverride = () => {
+    const next = !motionOverride;
+    setMotionOverride(next);
+    setMotionOverrideState(next);
+  };
 
   const checkAdminStatus = async (userId: string) => {
     const { data: profile } = await supabase
@@ -79,6 +125,19 @@ function App() {
   return (
     <div className="min-h-screen bg-surface pb-12">
       <ScrollToTop />
+      {isSeasonalTheme(theme) && <SeasonalDecor theme={theme} />}
+      {/* Visas bara om systemet pauserar animationer – annars störande */}
+      {isSeasonalTheme(theme) && reducedMotion && (
+        <button
+          onClick={toggleMotionOverride}
+          className="fixed bottom-4 right-4 z-40 text-xs font-medium bg-raised border border-outline text-content-muted px-3 py-2 rounded-full shadow-md hover:text-content"
+          title="Systemet har 'reducerad animation' på – välj om appens säsongsanimationer ska köra"
+        >
+          {motionOverride
+            ? "🎬 Animationer på (override) – stäng av"
+            : "🎬 Systemet pausar animationer – släpp på"}
+        </button>
+      )}
       {/* Header */}
       <header className="bg-raised border-b border-outline sticky top-0 z-50 shadow-sm">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 min-h-16 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -87,7 +146,7 @@ function App() {
           </h1>
 
           <div className="w-full sm:w-auto flex items-center justify-between sm:justify-end gap-2 sm:gap-4">
-            <ThemeSwitcher />
+            <ThemeSwitcher theme={theme} onSelect={selectTheme} />
             {user && (
               <>
                 <span className="text-xs sm:text-sm text-content-muted max-w-32 sm:max-w-none truncate">
@@ -165,7 +224,12 @@ function App() {
               path="/change-password"
               element={protectedRoute(<ChangePassword />)}
             />
-            <Route path="/profile" element={protectedRoute(<Profile />)} />
+            <Route
+              path="/profile"
+              element={protectedRoute(
+                <Profile theme={theme} />,
+              )}
+            />
             <Route
               path="/stats"
               element={protectedRoute(

@@ -15,6 +15,11 @@ dist-ssr
 # Environment
 .env
 
+# Local-only files (agent tooling, local dev schema)
+.agents/
+skills-lock.json
+supabase/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

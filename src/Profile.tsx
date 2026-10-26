@@ -16,6 +16,9 @@ import { buildChallengeState, type Achievement } from "./achievements";
 import { syncOwnAchievements } from "./useAchievementSync";
 import { UnlockCelebration } from "./components/UnlockCelebration";
 import ChallengeCalendar from "./components/ChallengeCalendar";
+import { playSeasonalSound, warmUpAudio } from "./seasonalSound";
+import { isSeasonalTheme } from "./theme";
+import type { ThemeName } from "./theme";
 
 interface Challenge {
   id: number;
@@ -51,7 +54,7 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-function Profile() {
+function Profile({ theme = "light" }: { theme?: ThemeName }) {
   const [fullName, setFullName] = useState<string>("");
   const [alias, setAlias] = useState<string>("");
   const [profileMessage, setProfileMessage] = useState<string>("");
@@ -423,6 +426,9 @@ function Profile() {
     e.preventDefault();
     if (!isCurrentCompleted || !currentChallenge) return;
 
+    // Värmer upp AudioContext INUTI klickgesten (krav för iOS Safari)
+    warmUpAudio(theme);
+
     const amountNum = parseInt(logAmount);
     if (
       isNaN(amountNum) ||
@@ -465,12 +471,16 @@ function Profile() {
     if (!error) {
       setLogAmount("");
       fetchChallengeLogs(user.id, currentChallenge.id, true);
+      if (isSeasonalTheme(theme)) playSeasonalSound(theme);
     }
   };
 
   // Quick-logga för idag (+10 / +20) utan att fylla i formuläret
   const handleQuickLogToday = async (amount: number) => {
     if (!isCurrentCompleted || !currentChallenge) return;
+
+    // Värmer upp AudioContext INUTI klickgesten (krav för iOS Safari)
+    warmUpAudio(theme);
 
     if (
       !isAllowedLogDate(
@@ -510,6 +520,7 @@ function Profile() {
 
     if (!error) {
       fetchChallengeLogs(user.id, currentChallenge.id, true);
+      if (isSeasonalTheme(theme)) playSeasonalSound(theme);
     }
   };
 

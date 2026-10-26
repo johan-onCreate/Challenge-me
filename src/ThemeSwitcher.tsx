@@ -1,6 +1,5 @@
-import { useState } from "react";
 import type { ReactNode } from "react";
-import { getInitialTheme, setTheme, THEME_OPTIONS } from "./theme";
+import { THEME_OPTIONS } from "./theme";
 import type { ThemeName } from "./theme";
 
 const ICONS: Record<ThemeName, ReactNode> = {
@@ -46,16 +45,25 @@ const ICONS: Record<ThemeName, ReactNode> = {
       <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
     </svg>
   ),
+  halloween: (
+    <span className="block text-sm leading-none" aria-hidden="true">
+      🎃
+    </span>
+  ),
+  christmas: (
+    <span className="block text-sm leading-none" aria-hidden="true">
+      🎄
+    </span>
+  ),
 };
 
-export default function ThemeSwitcher() {
-  const [theme, setThemeState] = useState<ThemeName>(() => getInitialTheme());
-
-  const select = (next: ThemeName) => {
-    setTheme(next);
-    setThemeState(next);
-  };
-
+export default function ThemeSwitcher({
+  theme,
+  onSelect,
+}: {
+  theme: ThemeName;
+  onSelect: (next: ThemeName) => void;
+}) {
   return (
     <div
       className="flex items-center gap-0.5 rounded-lg bg-inset p-0.5"
@@ -72,7 +80,7 @@ export default function ThemeSwitcher() {
             aria-checked={active}
             title={option.label}
             aria-label={option.label}
-            onClick={() => select(option.id)}
+            onClick={() => onSelect(option.id)}
             className={`rounded-md p-1.5 transition-colors ${
               active
                 ? "bg-raised text-content shadow-sm"
