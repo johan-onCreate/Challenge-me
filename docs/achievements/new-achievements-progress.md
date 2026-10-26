@@ -16,7 +16,7 @@ Status: **klar i koden** — kvar: köra migration 003 i Supabase + PR-review.
 | `troll.404` | troll | 404: Legs Not Found | Exakt 404 reps på en dag |
 | `troll.999` | troll | Unfinished Business | Exakt 999 reps på en dag |
 | `troll.1337` | troll | LEET squatter | Exakt 1 337 reps på en dag |
-| `troll.6969` | troll | Nice. | Exakt 6 969 **totala** reps — stanna där den dagen! |
+| `troll.6969` | troll | Nice. | Ackumulerad total landar exakt på 6 969 på en dag (stannar kvar sedan) |
 | `troll.depression` | troll | The Great Squat Depression | 3 raka nolldagar efter minst en loggad dag |
 | `date.halloween` | special | Nightmare on Squat Street | Logga en dag på 31 oktober 2026 |
 | `date.blackfriday` | special | Black Friday Burn | Minst 250 reps på 27 november 2026 |
@@ -72,7 +72,29 @@ hint → "Logga exakt 1 squat under en dag."
 - `sql/achievements.sql` (seed) uppdaterad att spegla katalogen (44 rader +
   sync-UPDATE för renamen).
 
-### G. Tests
+### G. Fix: troll.6969 "Nice." — ingen fick det
+
+**Buggen:** `evaluate()` beviljade badget bara medan den *aktuella* totalen
+var exakt 6 969 (`totalReps === NICE_TOTAL`). I praktiken: (1) totalen
+måste landa precis på 6 969 vid dagsskifte — sällsynt, och (2) loggades
+fler reps rev väggen (`reconcileAchievements`) badget. Motsatte sig
+appens eget löfte "badgar tas aldrig ifrån". Resultat: noll mottagare.
+
+**Fixen:** badget beviljas nu när den *ackumulerade* totalen (dagssummor i
+dagordning) landar exakt på 6 969 på någon dag — ny ren helper
+`everReachedExactTotal(dayTotals, exactTotal)`. Monoton: en gång uppnått
+stannar priset, så det kan aldrig upphävas. Hinten uppdaterad:
+"Exakt 6 969 totala reps — landa precis på siffran!".
+
+**Retroaktiv beviljning:** `sql/migrations/004_fix_6969.sql` (idempotent):
+window-function över `challenge_logs` hittar alla (användare, utmaningar)
+vars ackumulerade total någonsin landade exakt på 6 969 och upsertar dem
+i `user_achievements` (`ON CONFLICT DO NOTHING`). Kollfilerna röras
+aldrig. Inkluderar en (kommenterad) förhandsgranskning som listar vem som
+ska få det. **Måste köras i Supabase SQL Editor** — då får även de som
+landade på 6 969 före fixen sitt badge.
+
+### H. Tests
 
 - `achievements.test.ts`: katalog 26 → 44, nya helper-tester, nya
   evaluate-tester per badge, `buildChallengeState`-test (inkl. goatWinner),
@@ -155,8 +177,8 @@ hint → "Logga exakt 1 squat under en dag."
    - Logga en dag 31/10 (Halloween) → Nightmare on Squat Street
    - 250+ på 27/11 (Black Friday) → Black Friday Burn
    - GOAT: först ut till tier-målet får 🐐 (räcker att vara ensam i tiern)
-   - "Nice." kräver exakt 6 969 **totala** — loggar du fler försvinner det
-     (badget återfinns om du hamnar på exakt 6 969 igen, via väggen).
+   - "Nice." beviljas när den ackumulerade totalen landar exakt på 6 969
+     på en dag — sedan stannar priset kvar även om du loggar vidare.
 
 ## Saker att köra manuellt
 
