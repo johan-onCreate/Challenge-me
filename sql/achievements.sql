@@ -68,7 +68,7 @@ INSERT INTO public.achievements (id, family, title, hint, emoji, goal, sort_orde
   ('troll.404',            'troll',   '404: Legs Not Found',                 'Exakt 404 reps på en dag',             '🫠',  NULL,    31),
   ('troll.999',            'troll',   'Unfinished Business',                 'Exakt 999 reps på en dag',             '😮',  NULL,    32),
   ('troll.1337',           'troll',   'LEET squatter',                       'Exakt 1 337 reps på en dag',           '🥷',  NULL,    33),
-  ('troll.6969',           'troll',   'Nice.',                               'Exakt 6 969 totala reps — stanna där den dagen!', '😏', NULL, 34),
+  ('troll.6969',           'troll',   'Nice.',                               'Exakt 6 969 totala reps — landa precis på siffran!', '😏', NULL, 34),
   ('troll.depression',     'troll',   'The Great Squat Depression',          '3 dagar i rad med 0 loggade reps',     '🌧️',  NULL,    35),
   ('date.halloween',       'special', 'Nightmare on Squat Street',           'Logga en dag på Halloween',            '🎃',  NULL,    36),
   ('date.blackfriday',     'special', 'Black Friday Burn',                   'Minst 250 reps på Black Friday',       '🛒',  NULL,    37),

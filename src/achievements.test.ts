@@ -16,6 +16,7 @@ import {
   diffDays,
   eachDay,
   evaluate,
+  everReachedExactTotal,
   firstToReachGoal,
   hasReturnAfterGap,
   longestConsecutiveRun,
@@ -343,6 +344,36 @@ describe("hasReturnAfterGap", () => {
     ]);
     // 10-04 bryter gapet inför 10-09
     expect(hasReturnAfterGap(totals, "2026-10-01", "2026-10-31", 7, 100)).toBe(false);
+  });
+});
+
+describe("everReachedExactTotal", () => {
+  it("is false when the running total never lands exactly on the target", () => {
+    expect(
+      everReachedExactTotal(days([["2026-10-05", 6960], ["2026-10-06", 20]]), 6969),
+    ).toBe(false);
+    expect(everReachedExactTotal(new Map<string, number>(), 6969)).toBe(false);
+    expect(everReachedExactTotal(days([["2026-10-05", 5]]), 0)).toBe(false);
+  });
+
+  it("is true when the running total lands exactly on the target at a day boundary", () => {
+    expect(
+      everReachedExactTotal(days([["2026-10-05", 6900], ["2026-10-06", 69]]), 6969),
+    ).toBe(true);
+    expect(everReachedExactTotal(days([["2026-10-05", 6969]]), 6969)).toBe(true);
+  });
+
+  it("stays true for later days (monotonic) — order of map entries does not matter", () => {
+    expect(
+      everReachedExactTotal(
+        days([
+          ["2026-10-07", 50],
+          ["2026-10-06", 69],
+          ["2026-10-05", 6900],
+        ]),
+        6969,
+      ),
+    ).toBe(true);
   });
 });
 
@@ -876,11 +907,37 @@ describe("evaluate", () => {
     ).toEqual([false, false, false]);
   });
 
-  it("grants Nice. only at exactly 6 969 total reps", () => {
-    expect(has(evaluate(makeState({ totalReps: 6968 })), "troll.6969")).toEqual([false]);
-    expect(has(evaluate(makeState({ totalReps: 6969 })), "troll.6969")).toEqual([true]);
-    // Stannar inte där → priset är borta igen
-    expect(has(evaluate(makeState({ totalReps: 6970 })), "troll.6969")).toEqual([false]);
+  it("grants Nice. when the running total ever lands on exactly 6 969", () => {
+    // Passar 6 969 utan att landa exakt → inget pris
+    expect(
+      has(
+        evaluate(makeState({ dayTotals: days([["2026-10-05", 6960], ["2026-10-06", 20]]) })),
+        "troll.6969",
+      ),
+    ).toEqual([false]);
+    // Aldrig exakt → inget pris
+    expect(
+      has(evaluate(makeState({ dayTotals: days([["2026-10-05", 6968]]) })), "troll.6969"),
+    ).toEqual([false]);
+    // Landar exakt på 6 969 → pris
+    expect(
+      has(
+        evaluate(makeState({ dayTotals: days([["2026-10-05", 6900], ["2026-10-06", 69]]) })),
+        "troll.6969",
+      ),
+    ).toEqual([true]);
+    // Landar exakt på 6 969 och loggar vidare → priset stannar kvar
+    // (badgar tas aldrig ifrån)
+    expect(
+      has(
+        evaluate(
+          makeState({
+            dayTotals: days([["2026-10-05", 6900], ["2026-10-06", 69], ["2026-10-07", 50]]),
+          }),
+        ),
+        "troll.6969",
+      ),
+    ).toEqual([true]);
   });
 
   it("grants the squat depression for 3 straight zero days after a log", () => {

@@ -63,7 +63,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
   { id: "troll.404", family: "troll", title: "404: Legs Not Found", hint: "Exakt 404 reps på en dag", emoji: "🫠", goal: null, sortOrder: 31 },
   { id: "troll.999", family: "troll", title: "Unfinished Business", hint: "Exakt 999 reps på en dag", emoji: "😮", goal: null, sortOrder: 32 },
   { id: "troll.1337", family: "troll", title: "LEET squatter", hint: "Exakt 1 337 reps på en dag", emoji: "🥷", goal: null, sortOrder: 33 },
-  { id: "troll.6969", family: "troll", title: "Nice.", hint: "Exakt 6 969 totala reps — stanna där den dagen!", emoji: "😏", goal: null, sortOrder: 34 },
+  { id: "troll.6969", family: "troll", title: "Nice.", hint: "Exakt 6 969 totala reps — landa precis på siffran!", emoji: "😏", goal: null, sortOrder: 34 },
   { id: "troll.depression", family: "troll", title: "The Great Squat Depression", hint: "3 dagar i rad med 0 loggade reps", emoji: "🌧️", goal: null, sortOrder: 35 },
   { id: "date.halloween", family: "special", title: "Nightmare on Squat Street", hint: "Logga en dag på Halloween", emoji: "🎃", goal: null, sortOrder: 36 },
   { id: "date.blackfriday", family: "special", title: "Black Friday Burn", hint: "Minst 250 reps på Black Friday", emoji: "🛒", goal: null, sortOrder: 37 },
@@ -115,7 +115,7 @@ export const COMEBACK_GAP_DAYS = 7;
 /** The Slacker's Redemption — minst 100 reps på en dag efter 3 raka nolldagar. */
 export const REDEMPTION_GAP_DAYS = 3;
 export const REDEMPTION_TARGET = 100;
-/** Nice. — exakt 6 969 totala reps (stanna där den dagen!). */
+/** Nice. — den ackumulerade totalen landar exakt på 6 969 på någon dag. */
 export const NICE_TOTAL = 6969;
 /** Groundhog Day / The Consistency Paradox — raka dagar med identisk summa. */
 export const CONSTANT_RUN_SHORT = 3;
@@ -315,6 +315,25 @@ export function hasReturnAfterGap(
       if (d >= startKey && d < gapStart) hasPriorLog = true;
     });
     if (hasPriorLog) return true;
+  }
+  return false;
+}
+
+/**
+ * Långa den ackumulerade totalen exakt `exactTotal` vid någon dag
+ * (dagssummor i dagordning)? Monoton: dagssummor är fasta, så ett svar
+ * som blir sant blir aldrig falskt igen — badget kan inte upphävas.
+ */
+export function everReachedExactTotal(
+  dayTotals: ReadonlyMap<string, number>,
+  exactTotal: number,
+): boolean {
+  if (exactTotal <= 0) return false;
+  const days = [...dayTotals.keys()].sort();
+  let cumulative = 0;
+  for (const day of days) {
+    cumulative += dayTotals.get(day) ?? 0;
+    if (cumulative === exactTotal) return true;
   }
   return false;
 }
@@ -641,9 +660,10 @@ export function evaluate(state: ChallengeState): ReadonlySet<string> {
   grant("troll.404", hasDayAt(404));
   grant("troll.999", hasDayAt(999));
   grant("troll.1337", hasDayAt(1337));
-  // Nice. — exakt 6 969 totala; loggas fler reps tar priset ifrån
-  // (samordningen på väggen korrigerar, som övriga exakta badgar).
-  grant("troll.6969", state.totalReps === NICE_TOTAL);
+  // Nice. — den ackumulerade totalen landar exakt på 6 969 på någon dag.
+  // Monoton: en gång uppnått stannar priset (badgar tas aldrig ifrån) —
+  // man behöver inte "stanna där", bara landa rätt.
+  grant("troll.6969", everReachedExactTotal(state.dayTotals, NICE_TOTAL));
   // Depression — 3+ raka nolldagar EFTER minst en loggad dag.
   grant("troll.depression", state.maxZeroRun >= SQUAT_DEPRESSION_DAYS);
 
