@@ -604,6 +604,25 @@ body {
   }
 }
 
+/* Blink-signal efter lyckad loggning: gröng ring kring kalenderns dag
+   och progressbaren så användaren ser att repsen kom in. */
+@keyframes log-flash {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+  30% {
+    box-shadow: 0 0 0 3px var(--success);
+  }
+  60% {
+    box-shadow: 0 0 0 1px var(--success-soft-border);
+  }
+}
+
+.log-flash {
+  animation: log-flash 0.55s ease-in-out 2;
+}
+
 /* Pausa animationerna när tabben är dold (battery-friendly) */
 :root.seasonal-paused .seasonal-decor-item,
 :root.seasonal-paused .seasonal-flap,
@@ -617,7 +636,8 @@ body {
 @media (prefers-reduced-motion: reduce) {
   :root:not(.seasonal-motion-override) .seasonal-decor-item,
   :root:not(.seasonal-motion-override) .seasonal-flap,
-  :root:not(.seasonal-motion-override) .seasonal-fog {
+  :root:not(.seasonal-motion-override) .seasonal-fog,
+  :root:not(.seasonal-motion-override) .log-flash {
     animation: none;
   }
   /* Blixten är en blinkande overlay – dölj den helt vid reduced motion

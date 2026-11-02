@@ -12,6 +12,8 @@ export interface ChallengeCalendarProps {
   loggedAmounts: ReadonlyMap<string, number>;
   editingDate: string | null;
   editingAmount: string;
+  /** Dag som nettopp fått reps loggade – cellen blinkar som bekräftelse */
+  flashDate?: string | null;
   onEditingAmountChange: (amount: string) => void;
   onSelectDate: (date: string, loggedAmount: number) => void;
   onSave: () => void;
@@ -54,6 +56,7 @@ export default function ChallengeCalendar({
   loggedAmounts,
   editingDate,
   editingAmount,
+  flashDate = null,
   onEditingAmountChange,
   onSelectDate,
   onSave,
@@ -178,7 +181,9 @@ export default function ChallengeCalendar({
                     : isFuture
                       ? "border-outline-soft bg-raised text-content-fainter"
                       : "border-outline bg-raised text-content-muted"
-              } disabled:cursor-not-allowed`}
+              } disabled:cursor-not-allowed${
+                flashDate === date ? " log-flash" : ""
+              }`}
             >
               <span className="text-base font-bold capitalize">
                 {dateLabel}
@@ -291,7 +296,9 @@ export default function ChallengeCalendar({
                       : isFuture
                         ? "border-outline-soft bg-raised text-content-fainter"
                         : "border-outline bg-raised text-content-muted hover:border-accent-soft-border hover:bg-accent-soft"
-                } disabled:cursor-not-allowed`}
+                } disabled:cursor-not-allowed${
+                  flashDate === date ? " log-flash" : ""
+                }`}
                 title={`${date}${loggedAmount > 0 ? `: ${loggedAmount} reps` : ": lägg till reps"}`}
               >
                 {dayMonth && (
