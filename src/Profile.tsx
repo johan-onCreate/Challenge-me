@@ -96,11 +96,16 @@ function Profile({ theme = "light" }: { theme?: ThemeName }) {
   const [newlyUnlocked, setNewlyUnlocked] = useState<Achievement[]>([]);
   const clearCelebration = useCallback(() => setNewlyUnlocked([]), []);
 
-  // Blink-bekräftelse: vilken dag som nettopp fått reps loggade
+  // Blink-bekräftelse: vilken dag som nettopp fått reps loggade.
+  // flashCount alternerar CSS-klassen (log-flash/log-flash-b) så att
+  // blinkningen startar om vid upprepade loggningar.
   const [flashLogDate, setFlashLogDate] = useState<string | null>(null);
+  const [flashCount, setFlashCount] = useState(0);
+  const flashClass = flashCount % 2 === 1 ? "log-flash" : "log-flash-b";
   const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const flashLoggedDate = useCallback((date: string) => {
     setFlashLogDate(date);
+    setFlashCount((count) => count + 1);
     if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current);
     flashTimeoutRef.current = setTimeout(() => setFlashLogDate(null), 1200);
   }, []);
@@ -960,7 +965,7 @@ function Profile({ theme = "light" }: { theme?: ThemeName }) {
                   </div>
                   <div
                     className={`w-full bg-inset h-3 rounded-full overflow-hidden border border-outline/50${
-                      flashLogDate ? " log-flash" : ""
+                      flashLogDate ? ` ${flashClass}` : ""
                     }`}
                   >
                     <div
@@ -1072,6 +1077,7 @@ function Profile({ theme = "light" }: { theme?: ThemeName }) {
                 editingDate={editingCalendarDate}
                 editingAmount={editingCalendarAmount}
                 flashDate={flashLogDate}
+                flashCount={flashCount}
                 onEditingAmountChange={setEditingCalendarAmount}
                 onSelectDate={(date, amount) => {
                   setLogDate(date);

@@ -64,13 +64,18 @@ describe("ChallengeCalendar log flash", () => {
   });
 
   it("flashes the logged day in both the mobile and desktop layouts", () => {
-    const html = renderCalendar({ flashDate: "2026-10-06" });
+    const html = renderCalendar({ flashDate: "2026-10-06", flashCount: 1 });
 
     // En cell per layout blinkar
-    expect(
-      html.match(/class="flex min-h-16[^"]*log-flash"/g),
-    ).toHaveLength(1);
+    expect(html.match(/class="flex min-h-16[^"]*log-flash"/g)).toHaveLength(1);
     expect(html.match(/class="min-h-14[^"]*log-flash"/g)).toHaveLength(1);
+  });
+
+  it("alternates the animation class so consecutive logs restart the blink", () => {
+    const html = renderCalendar({ flashDate: "2026-10-06", flashCount: 2 });
+
+    expect(html.match(/log-flash-b/g)).toHaveLength(2);
+    expect(html).not.toMatch(/log-flash(?!-b)/);
   });
 });
 

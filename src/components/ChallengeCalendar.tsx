@@ -14,6 +14,8 @@ export interface ChallengeCalendarProps {
   editingAmount: string;
   /** Dag som nettopp fått reps loggade – cellen blinkar som bekräftelse */
   flashDate?: string | null;
+  /** Räknare som ökar per loggning – alternerar blinkningen så den startar om */
+  flashCount?: number;
   onEditingAmountChange: (amount: string) => void;
   onSelectDate: (date: string, loggedAmount: number) => void;
   onSave: () => void;
@@ -57,6 +59,7 @@ export default function ChallengeCalendar({
   editingDate,
   editingAmount,
   flashDate = null,
+  flashCount = 0,
   onEditingAmountChange,
   onSelectDate,
   onSave,
@@ -182,7 +185,9 @@ export default function ChallengeCalendar({
                       ? "border-outline-soft bg-raised text-content-fainter"
                       : "border-outline bg-raised text-content-muted"
               } disabled:cursor-not-allowed${
-                flashDate === date ? " log-flash" : ""
+                flashDate === date
+                  ? ` ${flashCount % 2 === 1 ? "log-flash" : "log-flash-b"}`
+                  : ""
               }`}
             >
               <span className="text-base font-bold capitalize">
@@ -297,7 +302,9 @@ export default function ChallengeCalendar({
                         ? "border-outline-soft bg-raised text-content-fainter"
                         : "border-outline bg-raised text-content-muted hover:border-accent-soft-border hover:bg-accent-soft"
                 } disabled:cursor-not-allowed${
-                  flashDate === date ? " log-flash" : ""
+                  flashDate === date
+                    ? ` ${flashCount % 2 === 1 ? "log-flash" : "log-flash-b"}`
+                    : ""
                 }`}
                 title={`${date}${loggedAmount > 0 ? `: ${loggedAmount} reps` : ": lägg till reps"}`}
               >
