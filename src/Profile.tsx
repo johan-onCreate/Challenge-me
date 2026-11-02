@@ -1,4 +1,4 @@
-import { useState, FormEvent, useEffect, useCallback } from "react";
+import { useState, FormEvent, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
 import {
   calculateEarnedPoints,
@@ -95,6 +95,27 @@ function Profile({ theme = "light" }: { theme?: ThemeName }) {
   // States för prisupplåsningar (confetti-kön)
   const [newlyUnlocked, setNewlyUnlocked] = useState<Achievement[]>([]);
   const clearCelebration = useCallback(() => setNewlyUnlocked([]), []);
+
+  // Blink-bekräftelse: vilken dag som nettopp fått reps loggade.
+  // flashCount alternerar CSS-klassen (log-flash/log-flash-b) så att
+  // blinkningen startar om vid upprepade loggningar.
+  const [flashLogDate, setFlashLogDate] = useState<string | null>(null);
+  const [flashCount, setFlashCount] = useState(0);
+  const flashClass = flashCount % 2 === 1 ? "log-flash" : "log-flash-b";
+  const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const flashLoggedDate = useCallback((date: string) => {
+    setFlashLogDate(date);
+    setFlashCount((count) => count + 1);
+    if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current);
+    flashTimeoutRef.current = setTimeout(() => setFlashLogDate(null), 1200);
+  }, []);
+  useEffect(
+    () => () => {
+      if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current);
+    },
+    [],
+  );
+
   const todayDate = toTodayKey(new Date());
 
   const syncAchievementsAfterLogs = async (
@@ -471,6 +492,7 @@ function Profile({ theme = "light" }: { theme?: ThemeName }) {
     if (!error) {
       setLogAmount("");
       fetchChallengeLogs(user.id, currentChallenge.id, true);
+      flashLoggedDate(logDate);
       if (isSeasonalTheme(theme)) playSeasonalSound(theme);
     }
   };
@@ -520,6 +542,7 @@ function Profile({ theme = "light" }: { theme?: ThemeName }) {
 
     if (!error) {
       fetchChallengeLogs(user.id, currentChallenge.id, true);
+      flashLoggedDate(todayDate);
       if (isSeasonalTheme(theme)) playSeasonalSound(theme);
     }
   };
@@ -940,7 +963,11 @@ function Profile({ theme = "light" }: { theme?: ThemeName }) {
                     </span>
                     <span>{progressPercent}%</span>
                   </div>
-                  <div className="w-full bg-inset h-3 rounded-full overflow-hidden border border-outline/50">
+                  <div
+                    className={`w-full bg-inset h-3 rounded-full overflow-hidden border border-outline/50${
+                      flashLogDate ? ` ${flashClass}` : ""
+                    }`}
+                  >
                     <div
                       className="bg-success h-full transition-all duration-500"
                       style={{ width: `${progressPercent}%` }}
@@ -1049,6 +1076,8 @@ function Profile({ theme = "light" }: { theme?: ThemeName }) {
                 loggedAmounts={loggedAmountByDate}
                 editingDate={editingCalendarDate}
                 editingAmount={editingCalendarAmount}
+                flashDate={flashLogDate}
+                flashCount={flashCount}
                 onEditingAmountChange={setEditingCalendarAmount}
                 onSelectDate={(date, amount) => {
                   setLogDate(date);
